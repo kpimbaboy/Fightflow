@@ -1,0 +1,1761 @@
+<!DOCTYPE html>
+<html lang="fr" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FightFlow Lab v4.0 - Entraînement Mémoire Musculaire & Import/Export</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:ital,wght@0,400;0,600;0,700;1,700&family=JetBrains+Mono:wght@400;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #07090e;
+      color: #e2e8f0;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    .font-arcade { font-family: 'Chakra Petch', sans-serif; }
+    .font-code { font-family: 'JetBrains Mono', monospace; }
+
+    /* Glow Effects */
+    .glow-cyan { box-shadow: 0 0 16px rgba(6, 182, 212, 0.45); }
+    .glow-fuchsia { box-shadow: 0 0 16px rgba(217, 70, 239, 0.45); }
+    .glow-emerald { box-shadow: 0 0 16px rgba(16, 185, 129, 0.45); }
+    .glow-amber { box-shadow: 0 0 16px rgba(245, 158, 11, 0.45); }
+    .glow-red { box-shadow: 0 0 16px rgba(239, 68, 68, 0.5); }
+    .text-glow { text-shadow: 0 0 10px currentColor; }
+
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #0b0f19; }
+    ::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: #475569; }
+
+    /* Buttons micro-interactions */
+    .btn-pressable {
+      transition: all 0.05s ease-out;
+      box-shadow: inset 0 -3px 0 rgba(0,0,0,0.5), 0 3px 6px rgba(0,0,0,0.3);
+    }
+    .btn-pressable:active, .btn-pressable.active {
+      transform: translateY(2px);
+      box-shadow: inset 0 -1px 0 rgba(0,0,0,0.5), 0 1px 2px rgba(0,0,0,0.3);
+    }
+
+    /* Joystick Ball Gate */
+    .stick-stem {
+      transform-origin: bottom center;
+      transition: transform 0.06s cubic-bezier(0.1, 0.8, 0.3, 1);
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col overflow-x-hidden selection:bg-cyan-500 selection:text-black focus:outline-none" tabindex="0" id="main-app-container">
+
+  <!-- TOAST NOTIFICATION FLOTTANTE -->
+  <div id="toast" class="fixed bottom-6 right-6 z-50 transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none flex items-center gap-2.5 px-4 py-2.5 rounded-xl bg-slate-900/95 border border-cyan-500/50 shadow-2xl backdrop-blur text-xs font-semibold text-white">
+    <i data-lucide="check-circle" class="w-4 h-4 text-cyan-400" id="toast-icon"></i>
+    <span id="toast-message">Action terminée</span>
+  </div>
+
+  <!-- EN-TÊTE / HUD -->
+  <header class="border-b border-slate-800/80 bg-slate-950/90 backdrop-blur sticky top-0 z-40 px-3 sm:px-6 py-2.5 flex items-center justify-between">
+    <div class="flex items-center space-x-3">
+      <div class="h-9 w-9 rounded-xl bg-gradient-to-tr from-cyan-500 via-indigo-600 to-fuchsia-600 flex items-center justify-center font-arcade font-bold text-lg text-white shadow-lg shadow-cyan-500/25">
+        FF
+      </div>
+      <div>
+        <div class="flex items-center gap-2">
+          <h1 class="font-arcade text-base sm:text-xl font-bold tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-fuchsia-400 to-amber-300">
+            FIGHTFLOW LAB
+          </h1>
+          <span class="text-[10px] px-1.5 py-0.5 rounded border border-cyan-500/40 text-cyan-400 font-mono">v4.0 PRO</span>
+        </div>
+        <p class="text-[11px] text-slate-400 hidden sm:block">Laboratoire de Mémoire Musculaire, SOCD & Diagnostic d'Exécution</p>
+      </div>
+    </div>
+
+    <!-- BOUTONS D'ACTIONS SUPÉRIEURS -->
+    <div class="flex items-center space-x-1.5 sm:space-x-3">
+      
+      <!-- Import / Export Buttons -->
+      <button id="open-share-btn" class="flex items-center space-x-1.5 px-2.5 py-1.5 rounded-lg bg-indigo-950/70 hover:bg-indigo-900/90 border border-indigo-700/60 text-xs font-semibold text-indigo-200 transition shadow-sm">
+        <i data-lucide="share-2" class="w-3.5 h-3.5 text-indigo-400"></i>
+        <span class="hidden md:inline">Partager</span>
+      </button>
+
+      <button id="open-io-btn" class="flex items-center space-x-1.5 px-2.5 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700/80 text-xs font-semibold text-slate-200 transition">
+        <i data-lucide="arrow-down-up" class="w-3.5 h-3.5 text-cyan-400"></i>
+        <span>Import / Export</span>
+      </button>
+
+      <!-- Toggle Audio SFX -->
+      <button id="toggle-audio-btn" class="flex items-center space-x-1 px-2.5 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-800 text-xs text-slate-300 transition" title="Activer / Désactiver les sons">
+        <i data-lucide="volume-2" id="audio-icon" class="w-4 h-4 text-cyan-400"></i>
+        <span id="audio-text" class="hidden lg:inline text-[11px] text-cyan-400 font-medium">SFX ON</span>
+      </button>
+
+      <!-- Raccourcis -->
+      <button id="open-keybinds-btn" class="flex items-center space-x-1 px-2.5 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-800 text-xs text-slate-300 hover:text-cyan-400 transition" title="Configuration clavier">
+        <i data-lucide="keyboard" class="w-4 h-4"></i>
+        <span class="hidden md:inline">Touches</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- BANDEAU D'AIDE ET FOCUS -->
+  <div id="focus-reminder-bar" class="bg-cyan-950/40 border-b border-cyan-800/30 px-4 py-1 flex items-center justify-between text-[11px] text-cyan-300">
+    <div class="flex items-center gap-2">
+      <span class="flex h-2 w-2 relative">
+        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
+        <span class="relative inline-flex rounded-full h-2 w-2 bg-cyan-500"></span>
+      </span>
+      <span>Clavier actif : <strong class="text-white">AZERTY / QWERTY tolérant</strong> (A/Q = Gauche, S = Bas, D = Droite, Espace = Saut). Attaques : <strong>U I O J K L</strong> ou Numpad <strong>1-6</strong>.</span>
+    </div>
+    <div class="text-[10px] text-slate-400 font-mono hidden sm:block">
+      Touche [TAB] : Inverser Côté P1 ⇄ P2
+    </div>
+  </div>
+
+  <!-- CORPS PRINCIPAL -->
+  <main class="flex-1 max-w-7xl w-full mx-auto p-3 sm:p-5 grid grid-cols-1 lg:grid-cols-12 gap-5">
+
+    <!-- COLONNE PRINCIPALE (8 COLS) : Configuration, Scène de combo, Contrôleur Virtuel -->
+    <div class="lg:col-span-8 flex flex-col space-y-4">
+
+      <!-- BARRE DE PARAMÈTRES ET MODES DE JEU -->
+      <div class="bg-slate-900/90 border border-slate-800 rounded-xl p-3.5 sm:p-4 shadow-xl backdrop-blur space-y-3">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          
+          <!-- Sélection combo -->
+          <div class="flex-1 min-w-[200px]">
+            <label class="block text-[10px] text-slate-400 uppercase font-semibold">Exercice Sélectionné</label>
+            <div class="flex items-center gap-2 mt-0.5">
+              <select id="preset-selector" class="w-full bg-slate-950 text-slate-100 border border-slate-700/80 rounded-lg px-2.5 py-1.5 text-xs font-semibold focus:outline-none focus:border-cyan-400 cursor-pointer">
+                <!-- Rempli en JS -->
+              </select>
+              <button id="open-creator-btn" class="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-cyan-400 border border-slate-700" title="Créer un combo personnalisé">
+                <i data-lucide="plus" class="w-4 h-4"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- Règle SOCD -->
+          <div>
+            <label class="block text-[10px] text-amber-400 uppercase font-semibold">Règle SOCD</label>
+            <select id="socd-selector" class="mt-0.5 bg-slate-950 text-slate-200 border border-amber-700/60 rounded-lg px-2.5 py-1.5 text-xs font-semibold focus:outline-none focus:border-amber-400 cursor-pointer">
+              <option value="neutral" selected>Neutre (Tournois Capcom CPT)</option>
+              <option value="up_prio">Priorité Haut (Hitbox Vintage)</option>
+              <option value="last_win">Dernier Input (Second Input Win)</option>
+              <option value="raw">Brut (Aucun nettoyage)</option>
+            </select>
+          </div>
+
+          <!-- Fenêtre de timing -->
+          <div>
+            <label class="block text-[10px] text-slate-400 uppercase font-semibold">Fenêtre de Tir</label>
+            <select id="window-selector" class="mt-0.5 bg-slate-950 text-slate-200 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs font-semibold focus:outline-none focus:border-cyan-400 cursor-pointer">
+              <option value="relaxed">Large (450ms)</option>
+              <option value="normal" selected>Normale (260ms)</option>
+              <option value="strict">Stricte (~8 frames)</option>
+              <option value="justframe">Just-Frame (~4 frames)</option>
+            </select>
+          </div>
+
+          <!-- Inversion P1 / P2 -->
+          <div class="flex items-end">
+            <button id="toggle-mirror-btn" class="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-semibold text-slate-200 flex items-center space-x-1.5 transition" title="Inverser gauche/droite (Côté P1 / Côté P2)">
+              <i data-lucide="repeat" class="w-3.5 h-3.5 text-cyan-400"></i>
+              <span id="mirror-badge">Côté P1</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- OPTIONS COGNITIVES (HIT CONFIRM / BLIND / SURVIE) -->
+        <div class="pt-2.5 border-t border-slate-800/80 flex flex-wrap items-center justify-between gap-2 text-xs">
+          <div class="flex items-center gap-2">
+            <span class="text-[10px] uppercase font-bold text-slate-500">Mode Entraînement :</span>
+            
+            <button id="mode-std-btn" class="training-mode-pill px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-cyan-950 text-cyan-300 border border-cyan-700/60 transition">
+              Standard
+            </button>
+            <button id="mode-hitconfirm-btn" class="training-mode-pill px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-slate-950 text-slate-400 border border-slate-800 hover:text-slate-200 transition">
+              Hit-Confirm Réflexe
+            </button>
+            <button id="mode-blind-btn" class="training-mode-pill px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-slate-950 text-slate-400 border border-slate-800 hover:text-slate-200 transition">
+              Blind (Aveugle)
+            </button>
+            <button id="mode-survival-btn" class="training-mode-pill px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-slate-950 text-slate-400 border border-slate-800 hover:text-slate-200 transition">
+              Survie Streak (10x)
+            </button>
+          </div>
+
+          <div class="text-[11px] font-mono text-slate-400">
+            Notation : <span id="combo-notation" class="text-amber-400 font-bold">2 ➔ 3 ➔ 6 + HP</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- PISTE D'EXÉCUTION DU COMBO -->
+      <div id="combo-stage" class="relative bg-slate-950 border-2 border-slate-800 rounded-2xl p-5 overflow-hidden shadow-2xl flex flex-col justify-center min-h-[210px] transition-colors duration-200">
+        
+        <!-- Stimulus Hit-Confirm Overlay -->
+        <div id="hit-stimulus-bar" class="absolute inset-x-0 top-0 h-1.5 bg-slate-800 transition-colors duration-150"></div>
+        <div id="hit-stimulus-banner" class="absolute top-2 left-1/2 -translate-x-1/2 text-[10px] font-arcade font-bold px-2 py-0.5 rounded uppercase hidden">
+          SIGNE VISUEL
+        </div>
+
+        <div class="absolute inset-x-0 h-0.5 bg-gradient-to-r from-transparent via-cyan-500/30 to-transparent top-1/2 -translate-y-1/2 pointer-events-none"></div>
+
+        <!-- Toast Feedback Animé (PARFAIT / INPUT SALE / TIMING EXPIRÉ) -->
+        <div id="feedback-toast" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none transition-all duration-200 opacity-0 scale-90 z-30 flex flex-col items-center text-center w-full">
+          <span id="feedback-text" class="font-arcade text-3xl sm:text-4xl font-extrabold tracking-widest text-glow drop-shadow-md">PARFAIT!</span>
+          <span id="feedback-sub" class="text-xs sm:text-sm font-bold mt-1 text-slate-200 bg-black/75 px-3 py-1 rounded-full border border-slate-700/60"></span>
+        </div>
+
+        <!-- Tuiles dynamiques de la séquence cible -->
+        <div id="combo-tiles-container" class="flex items-center justify-center gap-2 sm:gap-3 flex-wrap py-5 z-10">
+          <!-- Injecté par JavaScript -->
+        </div>
+
+        <!-- Jauge d'avancement & Timer Frame -->
+        <div class="w-full bg-slate-900 h-2 rounded-full overflow-hidden mt-1 relative border border-slate-800">
+          <div id="combo-progress-bar" class="h-full bg-gradient-to-r from-cyan-500 via-indigo-500 to-fuchsia-500 w-0 transition-all duration-100"></div>
+        </div>
+      </div>
+
+      <!-- VISUALISEUR DE CONTRÔLEURS MULTI-MODÈLES -->
+      <div class="bg-slate-900/90 border border-slate-800 rounded-xl p-4 shadow-xl">
+        <div class="flex items-center justify-between pb-3 mb-3 border-b border-slate-800">
+          
+          <!-- Onglets de sélection du contrôleur -->
+          <div class="flex items-center gap-1.5 sm:gap-2">
+            <span class="text-xs font-arcade font-bold tracking-wider text-slate-400 mr-1 flex items-center gap-1">
+              <i data-lucide="gamepad" class="w-3.5 h-3.5 text-cyan-400"></i>
+              VUE :
+            </span>
+            <button data-controller-view="hitbox" class="ctrl-tab-btn active px-2 sm:px-2.5 py-1 rounded-md text-[11px] font-semibold bg-cyan-950 text-cyan-300 border border-cyan-700/60 transition">
+              Leverless (Hitbox)
+            </button>
+            <button data-controller-view="stick" class="ctrl-tab-btn px-2 sm:px-2.5 py-1 rounded-md text-[11px] font-semibold bg-slate-950 text-slate-400 border border-slate-800 hover:text-slate-200 transition">
+              Stick Arcade
+            </button>
+            <button data-controller-view="gamepad" class="ctrl-tab-btn px-2 sm:px-2.5 py-1 rounded-md text-[11px] font-semibold bg-slate-950 text-slate-400 border border-slate-800 hover:text-slate-200 transition">
+              Manette Pad
+            </button>
+            <button data-controller-view="hori" class="ctrl-tab-btn px-2 sm:px-2.5 py-1 rounded-md text-[11px] font-semibold bg-slate-950 text-slate-400 border border-slate-800 hover:text-slate-200 transition">
+              Pad 6-Boutons
+            </button>
+          </div>
+
+          <div class="text-[11px] font-mono text-cyan-400 bg-slate-950 px-2.5 py-0.5 rounded border border-slate-800">
+            Output SOCD : <span id="numpad-output" class="font-bold text-sm text-cyan-300">5</span>
+          </div>
+        </div>
+
+        <!-- ZONE DE RENDU DES CONTRÔLEURS -->
+        <div class="relative py-3 min-h-[170px] flex items-center justify-center">
+
+          <!-- 1. VUE LEVERLESS / HITBOX -->
+          <div id="view-hitbox" class="controller-viewport flex flex-col md:flex-row justify-around items-center gap-6 w-full">
+            <!-- Bloc directions all-button -->
+            <div class="relative flex flex-col items-center w-48 h-28 justify-center">
+              <div class="flex gap-3 mb-2">
+                <div class="flex flex-col items-center">
+                  <div id="hb-left" class="btn-pressable w-11 h-11 rounded-full bg-slate-800 border-2 border-slate-600 flex items-center justify-center text-slate-300 text-sm font-bold">◄</div>
+                  <span class="text-[9px] mt-1 text-slate-500 font-mono bind-label-left">Q / A</span>
+                </div>
+                <div class="flex flex-col items-center mt-3">
+                  <div id="hb-down" class="btn-pressable w-11 h-11 rounded-full bg-slate-800 border-2 border-slate-600 flex items-center justify-center text-slate-300 text-sm font-bold">▼</div>
+                  <span class="text-[9px] mt-1 text-slate-500 font-mono bind-label-down">S</span>
+                </div>
+                <div class="flex flex-col items-center">
+                  <div id="hb-right" class="btn-pressable w-11 h-11 rounded-full bg-slate-800 border-2 border-slate-600 flex items-center justify-center text-slate-300 text-sm font-bold">►</div>
+                  <span class="text-[9px] mt-1 text-slate-500 font-mono bind-label-right">D</span>
+                </div>
+              </div>
+              <!-- Bouton Saut (Gros bouton bas) -->
+              <div class="absolute -bottom-2 right-1 flex flex-col items-center">
+                <div id="hb-up" class="btn-pressable w-14 h-14 rounded-full bg-slate-800 border-2 border-slate-600 flex items-center justify-center text-slate-300 text-lg font-bold">▲</div>
+                <span class="text-[9px] mt-0.5 text-slate-500 font-mono bind-label-up">ESPACE</span>
+              </div>
+            </div>
+
+            <!-- Bloc 6 / 8 Boutons Attaque -->
+            <div class="flex flex-col gap-2">
+              <div class="flex gap-2.5">
+                <div class="flex flex-col items-center">
+                  <div id="btn-lp" class="btn-pressable w-11 h-11 rounded-full bg-slate-800 border-2 border-cyan-700/70 flex items-center justify-center text-cyan-400 text-xs font-arcade font-bold">LP</div>
+                  <span class="text-[9px] mt-1 text-slate-500 font-mono bind-label-lp">U / 4</span>
+                </div>
+                <div class="flex flex-col items-center -translate-y-1.5">
+                  <div id="btn-mp" class="btn-pressable w-11 h-11 rounded-full bg-slate-800 border-2 border-amber-600/70 flex items-center justify-center text-amber-400 text-xs font-arcade font-bold">MP</div>
+                  <span class="text-[9px] mt-1 text-slate-500 font-mono bind-label-mp">I / 5</span>
+                </div>
+                <div class="flex flex-col items-center -translate-y-1.5">
+                  <div id="btn-hp" class="btn-pressable w-11 h-11 rounded-full bg-slate-800 border-2 border-rose-600/70 flex items-center justify-center text-rose-400 text-xs font-arcade font-bold">HP</div>
+                  <span class="text-[9px] mt-1 text-slate-500 font-mono bind-label-hp">O / 6</span>
+                </div>
+              </div>
+              <div class="flex gap-2.5 ml-4">
+                <div class="flex flex-col items-center">
+                  <div id="btn-lk" class="btn-pressable w-11 h-11 rounded-full bg-slate-800 border-2 border-blue-600/70 flex items-center justify-center text-blue-400 text-xs font-arcade font-bold">LK</div>
+                  <span class="text-[9px] mt-1 text-slate-500 font-mono bind-label-lk">J / 1</span>
+                </div>
+                <div class="flex flex-col items-center -translate-y-1.5">
+                  <div id="btn-mk" class="btn-pressable w-11 h-11 rounded-full bg-slate-800 border-2 border-emerald-600/70 flex items-center justify-center text-emerald-400 text-xs font-arcade font-bold">MK</div>
+                  <span class="text-[9px] mt-1 text-slate-500 font-mono bind-label-mk">K / 2</span>
+                </div>
+                <div class="flex flex-col items-center -translate-y-1.5">
+                  <div id="btn-hk" class="btn-pressable w-11 h-11 rounded-full bg-slate-800 border-2 border-fuchsia-600/70 flex items-center justify-center text-fuchsia-400 text-xs font-arcade font-bold">HK</div>
+                  <span class="text-[9px] mt-1 text-slate-500 font-mono bind-label-hk">L / 3</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 2. VUE STICK ARCADE SANWA -->
+          <div id="view-stick" class="controller-viewport hidden flex flex-col md:flex-row justify-around items-center gap-6 w-full">
+            <div class="flex flex-col items-center justify-center relative w-44 h-32">
+              <div class="w-24 h-24 rounded-full bg-slate-950 border-4 border-slate-700 flex items-center justify-center relative shadow-inner">
+                <div class="absolute inset-0 flex items-center justify-center pointer-events-none opacity-20 text-[9px] font-mono">
+                  <span>8-WAY</span>
+                </div>
+                <!-- Tige et boule dynamique -->
+                <div id="stick-stem-container" class="stick-stem relative flex flex-col items-center">
+                  <div class="w-2 h-10 bg-gradient-to-t from-slate-500 to-slate-300 rounded"></div>
+                  <div id="stick-balltop" class="w-10 h-10 rounded-full bg-rose-600 border-2 border-rose-400 -mt-2 shadow-lg shadow-rose-900/40 transition-transform"></div>
+                </div>
+              </div>
+              <span class="text-[10px] text-slate-400 font-mono mt-1">GUIDE SANWA JLF</span>
+            </div>
+            <!-- Réutilisation des boutons d'arcade -->
+            <div id="stick-mirror-buttons" class="clone-buttons-target"></div>
+          </div>
+
+          <!-- 3. VUE GAMEPAD CLASSIQUE -->
+          <div id="view-gamepad" class="controller-viewport hidden flex flex-col md:flex-row justify-around items-center gap-6 w-full">
+            <!-- D-PAD en croix -->
+            <div class="grid grid-cols-3 gap-1 w-28 h-28 items-center justify-items-center">
+              <div></div>
+              <div id="pad-up" class="w-8 h-8 rounded bg-slate-800 border border-slate-600 flex items-center justify-center text-xs">▲</div>
+              <div></div>
+              <div id="pad-left" class="w-8 h-8 rounded bg-slate-800 border border-slate-600 flex items-center justify-center text-xs">◄</div>
+              <div class="w-7 h-7 rounded-full bg-slate-900 border border-slate-700"></div>
+              <div id="pad-right" class="w-8 h-8 rounded bg-slate-800 border border-slate-600 flex items-center justify-center text-xs">►</div>
+              <div></div>
+              <div id="pad-down" class="w-8 h-8 rounded bg-slate-800 border border-slate-600 flex items-center justify-center text-xs">▼</div>
+              <div></div>
+            </div>
+            <!-- 4 Boutons de face style pad (X, Y, A, B) -->
+            <div class="grid grid-cols-3 gap-1.5 w-32 h-32 items-center justify-items-center">
+              <div></div>
+              <div id="pad-btn-y" class="w-9 h-9 rounded-full bg-slate-800 border border-amber-500 text-amber-400 flex items-center justify-center font-bold text-xs">Y</div>
+              <div></div>
+              <div id="pad-btn-x" class="w-9 h-9 rounded-full bg-slate-800 border border-cyan-500 text-cyan-400 flex items-center justify-center font-bold text-xs">X</div>
+              <div></div>
+              <div id="pad-btn-b" class="w-9 h-9 rounded-full bg-slate-800 border border-rose-500 text-rose-400 flex items-center justify-center font-bold text-xs">B</div>
+              <div></div>
+              <div id="pad-btn-a" class="w-9 h-9 rounded-full bg-slate-800 border border-emerald-500 text-emerald-400 flex items-center justify-center font-bold text-xs">A</div>
+              <div></div>
+            </div>
+          </div>
+
+          <!-- 4. VUE HORI FIGHTING COMMANDER (6 boutons de face) -->
+          <div id="view-hori" class="controller-viewport hidden flex flex-col md:flex-row justify-around items-center gap-6 w-full">
+            <div class="flex flex-col items-center">
+              <div class="text-[10px] text-slate-500 font-mono mb-2">D-PAD DIGITAL HORI</div>
+              <div class="grid grid-cols-3 gap-1 w-24 h-24 items-center justify-items-center">
+                <div></div>
+                <div id="hori-up" class="w-7 h-7 rounded bg-slate-800 border border-slate-600 flex items-center justify-center text-xs">▲</div>
+                <div></div>
+                <div id="hori-left" class="w-7 h-7 rounded bg-slate-800 border border-slate-600 flex items-center justify-center text-xs">◄</div>
+                <div class="w-6 h-6 rounded bg-slate-900 border border-slate-700"></div>
+                <div id="hori-right" class="w-7 h-7 rounded bg-slate-800 border border-slate-600 flex items-center justify-center text-xs">►</div>
+                <div></div>
+                <div id="hori-down" class="w-7 h-7 rounded bg-slate-800 border border-slate-600 flex items-center justify-center text-xs">▼</div>
+                <div></div>
+              </div>
+            </div>
+            <!-- Grille 6 boutons de face inclinée -->
+            <div class="grid grid-cols-3 gap-2">
+              <div id="hori-lp" class="w-10 h-10 rounded-full bg-slate-800 border-2 border-cyan-500 text-cyan-300 flex items-center justify-center font-bold text-xs">□</div>
+              <div id="hori-mp" class="w-10 h-10 rounded-full bg-slate-800 border-2 border-amber-500 text-amber-300 flex items-center justify-center font-bold text-xs">△</div>
+              <div id="hori-hp" class="w-10 h-10 rounded-full bg-slate-800 border-2 border-rose-500 text-rose-300 flex items-center justify-center font-bold text-xs">R1</div>
+
+              <div id="hori-lk" class="w-10 h-10 rounded-full bg-slate-800 border-2 border-blue-500 text-blue-300 flex items-center justify-center font-bold text-xs">✕</div>
+              <div id="hori-mk" class="w-10 h-10 rounded-full bg-slate-800 border-2 border-emerald-500 text-emerald-300 flex items-center justify-center font-bold text-xs">○</div>
+              <div id="hori-hk" class="w-10 h-10 rounded-full bg-slate-800 border-2 border-fuchsia-500 text-fuchsia-300 flex items-center justify-center font-bold text-xs">R2</div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+
+    <!-- COLONNE DROITE (4 COLS) : Statistiques, Jitter & Bande d'Inputs Temps Réel -->
+    <div class="lg:col-span-4 flex flex-col space-y-4">
+      
+      <!-- STATISTIQUES & DIAGNOSTIC DE PRÉCISION -->
+      <div class="bg-slate-900/90 border border-slate-800 rounded-xl p-4 shadow-xl">
+        <div class="flex items-center justify-between pb-2 border-b border-slate-800">
+          <span class="text-xs font-arcade font-bold tracking-wider text-slate-300 flex items-center gap-1.5">
+            <i data-lucide="gauge" class="w-4 h-4 text-fuchsia-400"></i>
+            TÉLÉMÉTRIE & PERFORMANCES
+          </span>
+          <span id="streak-counter" class="text-xs font-mono font-bold text-cyan-400 bg-cyan-950/60 px-2 py-0.5 rounded border border-cyan-800/60">SÉRIE: 0</span>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2 mt-3">
+          <div class="bg-slate-950/80 rounded-lg p-2.5 border border-slate-800">
+            <span class="text-[10px] text-slate-400 uppercase font-semibold">Taux Réussite</span>
+            <div id="stat-accuracy" class="text-xl font-arcade font-bold text-cyan-400 mt-0.5">100%</div>
+            <span id="stat-counts" class="text-[10px] text-slate-500 font-mono">0 / 0 réussis</span>
+          </div>
+
+          <div class="bg-slate-950/80 rounded-lg p-2.5 border border-slate-800">
+            <span class="text-[10px] text-slate-400 uppercase font-semibold">Inputs Parasites</span>
+            <div id="stat-dirty" class="text-xl font-arcade font-bold text-amber-400 mt-0.5">0</div>
+            <span class="text-[10px] text-slate-500">Mouvements souillés</span>
+          </div>
+
+          <div class="bg-slate-950/80 rounded-lg p-2.5 border border-slate-800">
+            <span class="text-[10px] text-slate-400 uppercase font-semibold">Vitesse Moyenne</span>
+            <div id="stat-speed" class="text-xl font-arcade font-bold text-emerald-400 mt-0.5">0 ms</div>
+            <span class="text-[10px] text-slate-500">Temps d'exécution</span>
+          </div>
+
+          <div class="bg-slate-950/80 rounded-lg p-2.5 border border-slate-800">
+            <span class="text-[10px] text-slate-400 uppercase font-semibold">Jitter Frame (60FPS)</span>
+            <div id="stat-jitter" class="text-xl font-arcade font-bold text-indigo-400 mt-0.5">±0.0f</div>
+            <span class="text-[10px] text-slate-500">Dispersion temporelle</span>
+          </div>
+        </div>
+
+        <div class="mt-3 pt-2.5 border-t border-slate-800 flex justify-between items-center text-xs">
+          <button id="reset-stats-btn" class="text-[11px] text-slate-400 hover:text-rose-400 flex items-center gap-1 transition">
+            <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
+            <span>Réinitialiser les scores</span>
+          </button>
+          <span id="gamepad-badge" class="text-[10px] text-slate-500 font-mono">Gamepad déconnecté</span>
+        </div>
+      </div>
+
+      <!-- HISTORIQUE BANDE D'ARCADE TEMPS RÉEL (FRAME LOG) -->
+      <div class="flex-1 bg-slate-900/90 border border-slate-800 rounded-xl p-4 shadow-xl flex flex-col min-h-[300px]">
+        <div class="flex items-center justify-between pb-2 border-b border-slate-800 mb-2">
+          <span class="text-xs font-arcade font-bold tracking-wider text-slate-300 flex items-center gap-1.5">
+            <i data-lucide="history" class="w-4 h-4 text-cyan-400"></i>
+            HISTORIQUE FRAME PAR FRAME
+          </span>
+          <button id="clear-history-btn" class="text-[10px] text-slate-500 hover:text-slate-300 transition">Effacer</button>
+        </div>
+
+        <div id="input-stream" class="flex-1 overflow-y-auto space-y-1 pr-1 font-mono text-xs flex flex-col-reverse justify-end max-h-[360px]">
+          <div class="text-center text-slate-600 text-xs py-12 font-sans">
+            En attente d'inputs clavier ou manette...
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- ============================================================ -->
+  <!-- MODAL 1 : IMPORT & EXPORT DE COMBOS (JSON & LIENS) -->
+  <!-- ============================================================ -->
+  <div id="io-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-3 sm:p-5">
+    <div class="bg-slate-900 border border-slate-700/80 rounded-2xl w-full max-w-xl p-5 sm:p-6 shadow-2xl relative max-h-[92vh] flex flex-col">
+      <button id="close-io-modal" class="absolute top-4 right-4 text-slate-400 hover:text-white transition">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+
+      <div class="flex items-center gap-2.5 mb-4">
+        <div class="w-8 h-8 rounded-lg bg-cyan-950 border border-cyan-700/60 flex items-center justify-center text-cyan-400">
+          <i data-lucide="arrow-down-up" class="w-4 h-4"></i>
+        </div>
+        <div>
+          <h3 class="font-arcade text-lg font-bold text-slate-100">GESTION IMPORT & EXPORT</h3>
+          <p class="text-xs text-slate-400">Sauvegardez, restaurez ou échangez vos combos sous format standard</p>
+        </div>
+      </div>
+
+      <!-- Onglets Import / Export -->
+      <div class="flex border-b border-slate-800 mb-4 text-xs font-semibold">
+        <button id="tab-export-btn" class="px-4 py-2 text-cyan-400 border-b-2 border-cyan-400">Exporter</button>
+        <button id="tab-import-btn" class="px-4 py-2 text-slate-400 hover:text-slate-200">Importer</button>
+      </div>
+
+      <div class="flex-1 overflow-y-auto space-y-4 pr-1 text-xs">
+        
+        <!-- SECTION EXPORTATION -->
+        <div id="section-export" class="space-y-4">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <button id="btn-export-download-json" class="flex items-center justify-center gap-2 p-3 rounded-xl bg-slate-950 border border-slate-700 hover:border-cyan-500 hover:bg-slate-900 text-slate-200 font-semibold transition group">
+              <i data-lucide="download" class="w-4 h-4 text-cyan-400 group-hover:scale-110 transition"></i>
+              <span>Télécharger fichier .JSON</span>
+            </button>
+            <button id="btn-export-copy-json" class="flex items-center justify-center gap-2 p-3 rounded-xl bg-slate-950 border border-slate-700 hover:border-cyan-500 hover:bg-slate-900 text-slate-200 font-semibold transition group">
+              <i data-lucide="clipboard" class="w-4 h-4 text-fuchsia-400 group-hover:scale-110 transition"></i>
+              <span>Copier le JSON brut</span>
+            </button>
+          </div>
+
+          <!-- Partage par URL -->
+          <div class="p-3.5 rounded-xl bg-slate-950 border border-slate-800">
+            <label class="block text-[11px] font-bold text-slate-300 uppercase mb-1.5 flex items-center gap-1.5">
+              <i data-lucide="link" class="w-3.5 h-3.5 text-indigo-400"></i>
+              Lien de partage du combo sélectionné
+            </label>
+            <div class="flex gap-2">
+              <input id="share-url-input" type="text" readonly class="w-full bg-slate-900 border border-slate-700/80 rounded-lg px-2.5 py-1.5 text-[11px] font-mono text-slate-300 focus:outline-none">
+              <button id="btn-copy-url" class="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-semibold flex items-center gap-1">
+                <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+                <span>Copier</span>
+              </button>
+            </div>
+            <p class="text-[10px] text-slate-500 mt-1">Ce lien charge instantanément le combo chez n'importe quel joueur sans compte.</p>
+          </div>
+
+          <!-- Aperçu du contenu JSON -->
+          <div>
+            <label class="block text-[11px] text-slate-400 uppercase font-semibold mb-1">Aperçu des données actuelles</label>
+            <textarea id="export-preview-json" readonly rows="5" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 font-code text-[11px] text-slate-300 resize-none focus:outline-none"></textarea>
+          </div>
+        </div>
+
+        <!-- SECTION IMPORTATION -->
+        <div id="section-import" class="space-y-4 hidden">
+          
+          <!-- Zone Drag & Drop de fichier -->
+          <div id="drop-zone" class="border-2 border-dashed border-slate-700 hover:border-cyan-400 rounded-xl p-5 flex flex-col items-center justify-center text-center cursor-pointer transition bg-slate-950/60">
+            <i data-lucide="file-up" class="w-8 h-8 text-cyan-400 mb-2"></i>
+            <span class="text-xs font-semibold text-slate-200">Glissez-déposez votre fichier .json ici</span>
+            <span class="text-[10px] text-slate-500 mt-0.5">ou cliquez pour sélectionner un fichier</span>
+            <input type="file" id="file-input-json" accept=".json" class="hidden">
+          </div>
+
+          <!-- Coller du JSON brut -->
+          <div>
+            <label class="block text-[11px] text-slate-400 uppercase font-semibold mb-1">Ou collez directement votre code JSON</label>
+            <textarea id="import-raw-input" placeholder='[{"id":"mon_combo","title":"Super Combo", ...}]' rows="5" class="w-full bg-slate-950 border border-slate-800 focus:border-cyan-400 rounded-lg p-2.5 font-code text-[11px] text-slate-200 resize-none focus:outline-none"></textarea>
+          </div>
+
+          <!-- Décision de fusion -->
+          <div class="p-3 rounded-xl bg-slate-950 border border-slate-800 flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <span class="block text-xs font-bold text-slate-200">Méthode d'intégration</span>
+              <span class="text-[10px] text-slate-400">Fusionnez avec les combos existants ou écrasez la bibliothèque.</span>
+            </div>
+            <div class="flex gap-2">
+              <button id="btn-import-merge" class="px-3 py-1.5 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white font-semibold text-xs flex items-center gap-1.5">
+                <i data-lucide="git-merge" class="w-3.5 h-3.5"></i>
+                <span>Fusionner</span>
+              </button>
+              <button id="btn-import-replace" class="px-3 py-1.5 rounded-lg bg-rose-950 hover:bg-rose-900 border border-rose-800 text-rose-300 font-semibold text-xs flex items-center gap-1.5">
+                <i data-lucide="replace" class="w-3.5 h-3.5"></i>
+                <span>Écraser Tout</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- MODAL 2 : CONFIGURATION DES TOUCHES CLAVIER -->
+  <!-- ============================================================ -->
+  <div id="keybinds-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-700/80 rounded-2xl w-full max-w-lg p-6 shadow-2xl relative">
+      <button id="close-keybinds-btn" class="absolute top-4 right-4 text-slate-400 hover:text-white transition">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+
+      <h3 class="font-arcade text-lg font-bold text-cyan-400 mb-3 flex items-center gap-2">
+        <i data-lucide="keyboard" class="w-5 h-5"></i>
+        CONFIGURATION CLAVIER (AZERTY & QWERTY)
+      </h3>
+      <p class="text-xs text-slate-400 mb-4">
+        Le jeu prend en charge nativement les deux dispositions sans configuration obligatoire.
+      </p>
+
+      <div class="flex items-center space-x-2 mb-4">
+        <button id="preset-azerty-btn" class="px-3 py-1.5 rounded bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-cyan-300 border border-slate-700">AZERTY Défaut (ZQSD / AQSD)</button>
+        <button id="preset-qwerty-btn" class="px-3 py-1.5 rounded bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-300 border border-slate-700">QWERTY Défaut (WASD)</button>
+      </div>
+
+      <div class="grid grid-cols-2 gap-2 text-xs" id="keybind-slots">
+        <div class="bg-slate-950 p-2 rounded border border-slate-800 flex justify-between"><span>Gauche</span><strong class="text-cyan-400">Q / A / ◄</strong></div>
+        <div class="bg-slate-950 p-2 rounded border border-slate-800 flex justify-between"><span>Bas</span><strong class="text-cyan-400">S / ▼</strong></div>
+        <div class="bg-slate-950 p-2 rounded border border-slate-800 flex justify-between"><span>Droite</span><strong class="text-cyan-400">D / ►</strong></div>
+        <div class="bg-slate-950 p-2 rounded border border-slate-800 flex justify-between"><span>Saut / Haut</span><strong class="text-cyan-400">Espace / Z / W</strong></div>
+        <div class="bg-slate-950 p-2 rounded border border-slate-800 flex justify-between"><span>Light Punch (LP)</span><strong class="text-amber-400">U / Num 4</strong></div>
+        <div class="bg-slate-950 p-2 rounded border border-slate-800 flex justify-between"><span>Medium Punch (MP)</span><strong class="text-amber-400">I / Num 5</strong></div>
+        <div class="bg-slate-950 p-2 rounded border border-slate-800 flex justify-between"><span>Heavy Punch (HP)</span><strong class="text-amber-400">O / Num 6</strong></div>
+        <div class="bg-slate-950 p-2 rounded border border-slate-800 flex justify-between"><span>Light Kick (LK)</span><strong class="text-blue-400">J / Num 1</strong></div>
+        <div class="bg-slate-950 p-2 rounded border border-slate-800 flex justify-between"><span>Medium Kick (MK)</span><strong class="text-emerald-400">K / Num 2</strong></div>
+        <div class="bg-slate-950 p-2 rounded border border-slate-800 flex justify-between"><span>Heavy Kick (HK)</span><strong class="text-fuchsia-400">L / Num 3</strong></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- MODAL 3 : CRÉATEUR DE COMBO RAPIDE -->
+  <!-- ============================================================ -->
+  <div id="creator-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-700/80 rounded-2xl w-full max-w-md p-6 shadow-2xl relative">
+      <button id="close-creator-btn" class="absolute top-4 right-4 text-slate-400 hover:text-white transition">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+
+      <h3 class="font-arcade text-lg font-bold text-cyan-400 mb-1 flex items-center gap-2">
+        <i data-lucide="plus-circle" class="w-5 h-5"></i>
+        CRÉER UN COMBO
+      </h3>
+      <p class="text-xs text-slate-400 mb-4">Ajoutez un mouvement personnalisé à votre entraînement.</p>
+
+      <div class="space-y-3 text-xs">
+        <div>
+          <label class="block text-[11px] text-slate-400 uppercase font-semibold mb-1">Nom du combo</label>
+          <input id="create-name" type="text" placeholder="Ex: Flash Kick Guile" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-slate-200 focus:outline-none focus:border-cyan-400">
+        </div>
+        <div>
+          <label class="block text-[11px] text-slate-400 uppercase font-semibold mb-1">Jeu / Catégorie</label>
+          <input id="create-game" type="text" placeholder="Ex: Street Fighter 6" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-slate-200 focus:outline-none focus:border-cyan-400">
+        </div>
+        <div>
+          <label class="block text-[11px] text-slate-400 uppercase font-semibold mb-1">Séquence en notation Numpad</label>
+          <input id="create-sequence" type="text" placeholder="Ex: 2, 8+HK ou 6, 2, 3+HP" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-slate-200 font-mono focus:outline-none focus:border-cyan-400">
+          <span class="text-[10px] text-slate-500 mt-1 block">Format: nombres 1-9 séparés par des virgules, + bouton (HP, LP, HK...)</span>
+        </div>
+
+        <button id="btn-save-created-combo" class="w-full mt-2 py-2 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white font-semibold transition">
+          Enregistrer dans ma bibliothèque
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SCRIPT LOGIQUE ET MOTEURS -->
+  <script>
+    // ==========================================
+    // 1. DATA & INITIAL PRESETS
+    // ==========================================
+    const DEFAULT_PRESETS = [
+      {
+        id: "hadoken",
+        title: "Hadoken (Boule de feu)",
+        game: "Street Fighter",
+        desc: "Quart de cercle avant (236 + HP). Détection chirurgicale des diagonales.",
+        notation: "2 ➔ 3 ➔ 6 + HP",
+        strictMotion: [2, 3, 6],
+        steps: [
+          { dir: 2, btn: null, label: "↓ (2)" },
+          { dir: 3, btn: null, label: "↘ (3)" },
+          { dir: 6, btn: "HP", label: "→ + HP (6+HP)" }
+        ]
+      },
+      {
+        id: "shoryuken",
+        title: "Shoryuken (Dragon Punch)",
+        game: "Street Fighter",
+        desc: "Avant, Bas, Diagonale bas-avant (623 + HP). L'anti-air universel.",
+        notation: "6 ➔ 2 ➔ 3 + HP",
+        strictMotion: [6, 2, 3],
+        steps: [
+          { dir: 6, btn: null, label: "→ (6)" },
+          { dir: 2, btn: null, label: "↓ (2)" },
+          { dir: 3, btn: "HP", label: "↘ + HP (3+HP)" }
+        ]
+      },
+      {
+        id: "tatsumaki",
+        title: "Tatsumaki Senpukyaku",
+        game: "Street Fighter",
+        desc: "Quart de cercle arrière (214 + HK).",
+        notation: "2 ➔ 1 ➔ 4 + HK",
+        strictMotion: [2, 1, 4],
+        steps: [
+          { dir: 2, btn: null, label: "↓ (2)" },
+          { dir: 1, btn: null, label: "↙ (1)" },
+          { dir: 4, btn: "HK", label: "← + HK (4+HK)" }
+        ]
+      },
+      {
+        id: "ewgf",
+        title: "Electric Wind God Fist (EWGF)",
+        game: "Tekken",
+        desc: "Mishima Just-Frame : Avant, Neutre, Bas, Diagonale simultanée avec RP (6, n, 2, 3+RP).",
+        notation: "6 ➔ n ➔ 2 ➔ 3+RP",
+        strictMotion: [6, 5, 2, 3],
+        steps: [
+          { dir: 6, btn: null, label: "→ (6)" },
+          { dir: 5, btn: null, label: "Neutre (★)" },
+          { dir: 2, btn: null, label: "↓ (2)" },
+          { dir: 3, btn: "MP", label: "↘ + RP (3+RP)" }
+        ]
+      },
+      {
+        id: "overdrive",
+        title: "Demi-Cercle Arrière-Avant (Overdrive)",
+        game: "Guilty Gear",
+        desc: "632146 + HP. Balayage propre sans coupure.",
+        notation: "6 ➔ 3 ➔ 2 ➔ 1 ➔ 4 ➔ 6 + HP",
+        strictMotion: [6, 3, 2, 1, 4, 6],
+        steps: [
+          { dir: 6, btn: null, label: "→ (6)" },
+          { dir: 3, btn: null, label: "↘ (3)" },
+          { dir: 2, btn: null, label: "↓ (2)" },
+          { dir: 1, btn: null, label: "↙ (1)" },
+          { dir: 4, btn: null, label: "← (4)" },
+          { dir: 6, btn: "HP", label: "→ + HP (6+HP)" }
+        ]
+      }
+    ];
+
+    let comboLibrary = [];
+
+    // Local Storage Helper
+    function loadSavedLibrary() {
+      try {
+        const saved = localStorage.getItem('fightflow_library');
+        if (saved) {
+          comboLibrary = JSON.parse(saved);
+        } else {
+          comboLibrary = [...DEFAULT_PRESETS];
+        }
+      } catch (e) {
+        comboLibrary = [...DEFAULT_PRESETS];
+      }
+    }
+
+    function saveLibraryLocally() {
+      try {
+        localStorage.setItem('fightflow_library', JSON.stringify(comboLibrary));
+      } catch (e) {}
+    }
+
+    const DIR_SYMBOLS = {
+      1: "↙", 2: "↓", 3: "↘",
+      4: "←", 5: "★", 6: "→",
+      7: "↖", 8: "↑", 9: "↗"
+    };
+
+    const WINDOW_DELAYS = { relaxed: 450, normal: 260, strict: 130, justframe: 70 };
+
+    // ==========================================
+    // 2. AUDIO SYNTHESIZER ENGINE (Web Audio API)
+    // ==========================================
+    class SoundEngine {
+      constructor() {
+        this.ctx = null;
+        this.enabled = true;
+      }
+      init() {
+        if (!this.ctx) {
+          const AudioContext = window.AudioContext || window.webkitAudioContext;
+          if (AudioContext) this.ctx = new AudioContext();
+        }
+        if (this.ctx && this.ctx.state === 'suspended') {
+          this.ctx.resume();
+        }
+      }
+      unlock() { this.init(); }
+      play(freq, type = 'sine', duration = 0.08, vol = 0.15) {
+        if (!this.enabled) return;
+        this.init();
+        if (!this.ctx) return;
+        try {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = type;
+          osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+          gain.gain.setValueAtTime(vol, this.ctx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.0001, this.ctx.currentTime + duration);
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start();
+          osc.stop(this.ctx.currentTime + duration);
+        } catch(e) {}
+      }
+      step() { this.play(560, 'sine', 0.05, 0.12); }
+      success() {
+        this.play(659, 'triangle', 0.08, 0.2);
+        setTimeout(() => this.play(880, 'triangle', 0.12, 0.22), 60);
+      }
+      error() { this.play(130, 'sawtooth', 0.18, 0.25); }
+      dirty() {
+        this.play(380, 'square', 0.08, 0.12);
+        setTimeout(() => this.play(300, 'square', 0.1, 0.12), 50);
+      }
+    }
+    const sound = new SoundEngine();
+
+    // ==========================================
+    // 3. APPLICATION STATE
+    // ==========================================
+    let currentCombo = null;
+    let currentStepIndex = 0;
+    let comboStartTime = 0;
+    let isSideP2 = false; // Miroir Côté P1 (droite) vs Côté P2 (gauche)
+
+    // Entraînement Cognitif
+    let activeTrainingMode = 'std'; // 'std', 'hitconfirm', 'blind', 'survival'
+    let hitConfirmState = 'HIT'; // 'HIT' ou 'BLOCK'
+
+    // Inputs et Horodatage SOCD
+    const activeDirsTimestamp = { UP: 0, DOWN: 0, LEFT: 0, RIGHT: 0 };
+    let currentDirNumpad = 5;
+    let lastInputTime = 0;
+    let motionBuffer = []; // [{dir: 2, time: 1000}, ...]
+
+    // Statistiques & Frame Data
+    let totalAttempts = 0;
+    let successfulCombos = 0;
+    let totalDirtyInputs = 0;
+    let currentStreak = 0;
+    let executionTimes = [];
+
+    // Mapping Clavier Robuste (Tolérant AZERTY & QWERTY)
+    const keyActions = {
+      // Directions
+      "KeyQ": "LEFT", "KeyA": "LEFT", "ArrowLeft": "LEFT",
+      "KeyS": "DOWN", "ArrowDown": "DOWN",
+      "KeyD": "RIGHT", "ArrowRight": "RIGHT",
+      "KeyZ": "UP", "KeyW": "UP", "ArrowUp": "UP", "Space": "UP",
+      // Attaques (Standard UIJKLM et Pavé Numérique 1-6)
+      "KeyU": "LP", "Numpad4": "LP",
+      "KeyI": "MP", "Numpad5": "MP",
+      "KeyO": "HP", "Numpad6": "HP",
+      "KeyJ": "LK", "Numpad1": "LK",
+      "KeyK": "MK", "Numpad2": "MK",
+      "KeyL": "HK", "Numpad3": "HK",
+      "Semicolon": "HK", "KeyM": "LK"
+    };
+
+    // DOM Elements
+    const dom = {
+      appContainer: document.getElementById('main-app-container'),
+      presetSel: document.getElementById('preset-selector'),
+      socdSel: document.getElementById('socd-selector'),
+      winSel: document.getElementById('window-selector'),
+      tiles: document.getElementById('combo-tiles-container'),
+      progBar: document.getElementById('combo-progress-bar'),
+      feedToast: document.getElementById('feedback-toast'),
+      feedTxt: document.getElementById('feedback-text'),
+      feedSub: document.getElementById('feedback-sub'),
+      stream: document.getElementById('input-stream'),
+      numpadOut: document.getElementById('numpad-output'),
+      streakCounter: document.getElementById('streak-counter'),
+      statAcc: document.getElementById('stat-accuracy'),
+      statCounts: document.getElementById('stat-counts'),
+      statDirty: document.getElementById('stat-dirty'),
+      statSpeed: document.getElementById('stat-speed'),
+      statJitter: document.getElementById('stat-jitter'),
+      mirrorBadge: document.getElementById('mirror-badge'),
+      audioIcon: document.getElementById('audio-icon'),
+      audioText: document.getElementById('audio-text'),
+      hitStimulusBar: document.getElementById('hit-stimulus-bar'),
+      hitStimulusBanner: document.getElementById('hit-stimulus-banner'),
+      shareUrlInput: document.getElementById('share-url-input'),
+      exportPreviewJson: document.getElementById('export-preview-json')
+    };
+
+    // ==========================================
+    // 4. INITIALISATION & URL HASH PARSER
+    // ==========================================
+    function init() {
+      lucide.createIcons();
+      loadSavedLibrary();
+
+      // Vérification immédiate du fragment d'URL pour import automatique
+      checkUrlHashImport();
+
+      populatePresetDropdown();
+      loadCombo(comboLibrary[0] || DEFAULT_PRESETS[0]);
+      cloneStickButtons();
+      updateExportPreviews();
+
+      // Focus forcé
+      dom.appContainer.focus();
+    }
+
+    function populatePresetDropdown() {
+      dom.presetSel.innerHTML = '';
+      comboLibrary.forEach((c, idx) => {
+        const opt = document.createElement('option');
+        opt.value = idx;
+        opt.textContent = `${c.title} (${c.game || 'Fighter'})`;
+        dom.presetSel.appendChild(opt);
+      });
+    }
+
+    function loadCombo(combo) {
+      currentCombo = combo;
+      currentStepIndex = 0;
+      comboStartTime = 0;
+      motionBuffer = [];
+      document.getElementById('combo-notation').textContent = combo.notation;
+
+      // Mode Hit-Confirm setup
+      if (activeTrainingMode === 'hitconfirm') {
+        pickRandomHitConfirm();
+      }
+
+      renderSteps();
+      updateExportPreviews();
+    }
+
+    function renderSteps() {
+      dom.tiles.innerHTML = '';
+      const steps = getEffectiveSteps();
+
+      steps.forEach((step, idx) => {
+        const tile = document.createElement('div');
+        
+        let stateStyle = 'border-slate-800 bg-slate-900/60 text-slate-400 opacity-60';
+        if (idx === currentStepIndex) {
+          stateStyle = 'border-cyan-400 bg-cyan-950/80 text-cyan-300 scale-105 glow-cyan';
+        } else if (idx < currentStepIndex) {
+          stateStyle = 'border-emerald-600 bg-emerald-950/40 text-emerald-400 opacity-90';
+        }
+
+        // Mode Aveugle (Blind)
+        const isBlind = activeTrainingMode === 'blind' && idx >= currentStepIndex;
+        const displaySymbol = isBlind ? '?' : (DIR_SYMBOLS[step.dir] || '★');
+        const displayLabel = isBlind ? '???' : (step.btn ? `${displaySymbol} + ${step.btn}` : `(${step.dir})`);
+
+        tile.className = `px-3.5 py-2.5 rounded-xl border-2 flex flex-col items-center justify-center transition-all duration-150 min-w-[70px] ${stateStyle}`;
+        tile.innerHTML = `
+          <span class="text-2xl font-bold font-arcade tracking-tight">${displaySymbol}</span>
+          <span class="text-[11px] font-mono mt-0.5">${displayLabel}</span>
+        `;
+        dom.tiles.appendChild(tile);
+      });
+
+      dom.progBar.style.width = `${(currentStepIndex / steps.length) * 100}%`;
+    }
+
+    function getEffectiveSteps() {
+      if (!currentCombo) return [];
+      if (!isSideP2) return currentCombo.steps;
+
+      // Inversion Miroir 4 <-> 6, 1 <-> 3, 7 <-> 9
+      const mirrorMap = { 4:6, 6:4, 1:3, 3:1, 7:9, 9:7, 2:2, 8:8, 5:5 };
+      return currentCombo.steps.map(s => ({
+        ...s,
+        dir: mirrorMap[s.dir] || s.dir
+      }));
+    }
+
+    function getEffectiveStrictMotion() {
+      if (!currentCombo) return [];
+      if (!isSideP2) return currentCombo.strictMotion;
+      const mirrorMap = { 4:6, 6:4, 1:3, 3:1, 7:9, 9:7, 2:2, 8:8, 5:5 };
+      return currentCombo.strictMotion.map(d => mirrorMap[d] || d);
+    }
+
+    // ==========================================
+    // 5. IMPORT / EXPORT ENGINE (JSON & URL HASH)
+    // ==========================================
+    function generateShareUrlForCombo(combo) {
+      try {
+        const payload = JSON.stringify({ type: 'single', data: combo });
+        const encoded = encodeURIComponent(btoa(unescape(encodeURIComponent(payload))));
+        return `${window.location.origin}${window.location.pathname}#combo=${encoded}`;
+      } catch (e) {
+        return window.location.href;
+      }
+    }
+
+    function generateFullLibraryJson() {
+      return JSON.stringify(comboLibrary, null, 2);
+    }
+
+    function updateExportPreviews() {
+      if (!currentCombo) return;
+      dom.shareUrlInput.value = generateShareUrlForCombo(currentCombo);
+      dom.exportPreviewJson.value = generateFullLibraryJson();
+    }
+
+    function checkUrlHashImport() {
+      const hash = window.location.hash;
+      if (!hash || !hash.includes('#combo=')) return;
+
+      try {
+        const raw = hash.replace('#combo=', '');
+        const decoded = decodeURIComponent(escape(atob(decodeURIComponent(raw))));
+        const parsed = JSON.parse(decoded);
+
+        if (parsed && parsed.data) {
+          const combo = parsed.data;
+          // Vérifie si déjà présent
+          const existingIdx = comboLibrary.findIndex(c => c.id === combo.id);
+          if (existingIdx >= 0) {
+            comboLibrary[existingIdx] = combo;
+          } else {
+            comboLibrary.unshift(combo);
+          }
+          saveLibraryLocally();
+          showToast(`Combo importé depuis le lien : ${combo.title}`, 'check-circle');
+        }
+      } catch (e) {
+        showToast("Erreur lors de la lecture du lien de partage", 'alert-triangle');
+      }
+    }
+
+    function downloadJsonFile(content, fileName = 'fightflow_combos.json') {
+      const blob = new Blob([content], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      showToast("Fichier JSON téléchargé !", "download");
+    }
+
+    function copyToClipboard(text, successMsg = "Copié dans le presse-papier !") {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(() => showToast(successMsg, 'copy'));
+      } else {
+        const temp = document.createElement('textarea');
+        temp.value = text;
+        document.body.appendChild(temp);
+        temp.select();
+        document.execCommand('copy');
+        document.body.removeChild(temp);
+        showToast(successMsg, 'copy');
+      }
+    }
+
+    function processImportData(jsonString, isMerge = true) {
+      try {
+        const parsed = JSON.parse(jsonString);
+        let items = Array.isArray(parsed) ? parsed : [parsed];
+
+        // Validation élémentaire
+        const validItems = items.filter(i => i.title && Array.isArray(i.steps) && Array.isArray(i.strictMotion));
+        if (validItems.length === 0) {
+          showToast("Aucun combo valide détecté dans le JSON", "alert-circle");
+          return;
+        }
+
+        if (isMerge) {
+          validItems.forEach(vi => {
+            const idx = comboLibrary.findIndex(c => c.id === vi.id);
+            if (idx >= 0) comboLibrary[idx] = vi;
+            else comboLibrary.push(vi);
+          });
+          showToast(`${validItems.length} combos fusionnés avec succès !`, "git-merge");
+        } else {
+          comboLibrary = validItems;
+          showToast(`Bibliothèque écrasée (${validItems.length} combos chargés) !`, "replace");
+        }
+
+        saveLibraryLocally();
+        populatePresetDropdown();
+        loadCombo(comboLibrary[0]);
+        document.getElementById('io-modal').classList.add('hidden');
+      } catch (err) {
+        showToast("Format JSON invalide. Vérifiez la syntaxe.", "alert-triangle");
+      }
+    }
+
+    // ==========================================
+    // 6. SOCD & CONTRÔLEURS MULTI-VUES
+    // ==========================================
+    function calculateSOCDDirection() {
+      const mode = dom.socdSel.value;
+      let left = activeDirsTimestamp.LEFT > 0;
+      let right = activeDirsTimestamp.RIGHT > 0;
+      let up = activeDirsTimestamp.UP > 0;
+      let down = activeDirsTimestamp.DOWN > 0;
+
+      // Règle SOCD Horizontale (Gauche + Droite)
+      if (left && right) {
+        if (mode === 'neutral' || mode === 'up_prio') {
+          left = false; right = false;
+        } else if (mode === 'last_win') {
+          if (activeDirsTimestamp.LEFT > activeDirsTimestamp.RIGHT) right = false;
+          else left = false;
+        }
+      }
+
+      // Règle SOCD Verticale (Haut + Bas)
+      if (up && down) {
+        if (mode === 'neutral') {
+          up = false; down = false;
+        } else if (mode === 'up_prio') {
+          down = false; // Saut prioritaire
+        } else if (mode === 'last_win') {
+          if (activeDirsTimestamp.UP > activeDirsTimestamp.DOWN) down = false;
+          else up = false;
+        }
+      }
+
+      const horiz = left ? -1 : (right ? 1 : 0);
+      const vert = down ? -1 : (up ? 1 : 0);
+
+      if (vert === 1) return horiz === -1 ? 7 : (horiz === 1 ? 9 : 8);
+      if (vert === -1) return horiz === -1 ? 1 : (horiz === 1 ? 3 : 2);
+      return horiz === -1 ? 4 : (horiz === 1 ? 6 : 5);
+    }
+
+    function updateControllerVisuals(numpad) {
+      dom.numpadOut.textContent = numpad;
+      
+      const left = [1,4,7].includes(numpad);
+      const right = [3,6,9].includes(numpad);
+      const down = [1,2,3].includes(numpad);
+      const up = [7,8,9].includes(numpad);
+
+      // Hitbox
+      toggleBtnState('hb-left', left);
+      toggleBtnState('hb-right', right);
+      toggleBtnState('hb-down', down);
+      toggleBtnState('hb-up', up);
+
+      // Stick Arcade Stem Rotation
+      const stem = document.getElementById('stick-stem-container');
+      const ball = document.getElementById('stick-balltop');
+      if (stem && ball) {
+        let rotX = 0, rotY = 0;
+        if (left) rotY = -22;
+        if (right) rotY = 22;
+        if (down) rotX = 20;
+        if (up) rotX = -20;
+        stem.style.transform = `rotate(${rotY}deg) translateY(${rotX ? 6 : 0}px)`;
+        ball.classList.toggle('bg-rose-500', numpad !== 5);
+      }
+
+      // Gamepad standard
+      toggleBtnState('pad-left', left);
+      toggleBtnState('pad-right', right);
+      toggleBtnState('pad-down', down);
+      toggleBtnState('pad-up', up);
+
+      // Hori Pad
+      toggleBtnState('hori-left', left);
+      toggleBtnState('hori-right', right);
+      toggleBtnState('hori-down', down);
+      toggleBtnState('hori-up', up);
+    }
+
+    function toggleBtnState(id, isActive) {
+      const el = document.getElementById(id);
+      if (!el) return;
+      if (isActive) {
+        el.classList.add('active', 'bg-cyan-500', 'text-black', 'border-cyan-300');
+        el.classList.remove('bg-slate-800', 'text-slate-300');
+      } else {
+        el.classList.remove('active', 'bg-cyan-500', 'text-black', 'border-cyan-300');
+        el.classList.add('bg-slate-800', 'text-slate-300');
+      }
+    }
+
+    function flashAttackButton(action) {
+      const lower = action.toLowerCase();
+      const el = document.getElementById(`btn-${lower}`);
+      if (el) {
+        el.classList.add('active', 'scale-95', 'glow-cyan');
+        setTimeout(() => el.classList.remove('active', 'scale-95', 'glow-cyan'), 120);
+      }
+
+      // Sync Hori & Pad standard
+      const padMap = { LP: 'pad-btn-x', MP: 'pad-btn-y', LK: 'pad-btn-a', MK: 'pad-btn-b' };
+      if (padMap[action]) {
+        const pEl = document.getElementById(padMap[action]);
+        if (pEl) {
+          pEl.classList.add('brightness-150', 'scale-95');
+          setTimeout(() => pEl.classList.remove('brightness-150', 'scale-95'), 120);
+        }
+      }
+
+      const horiEl = document.getElementById(`hori-${lower}`);
+      if (horiEl) {
+        horiEl.classList.add('scale-95', 'bg-cyan-500', 'text-black');
+        setTimeout(() => horiEl.classList.remove('scale-95', 'bg-cyan-500', 'text-black'), 120);
+      }
+    }
+
+    function cloneStickButtons() {
+      const target = document.getElementById('stick-mirror-buttons');
+      const source = document.querySelector('#view-hitbox .flex.flex-col.gap-2');
+      if (target && source) {
+        target.innerHTML = source.outerHTML;
+      }
+    }
+
+    // ==========================================
+    // 7. MOTEUR D'EXÉCUTION & TÉLÉMÉTRIE
+    // ==========================================
+    function processInputEvent(type, dir, btn) {
+      sound.unlock();
+      const now = performance.now();
+      const delta = lastInputTime ? now - lastInputTime : 0;
+      lastInputTime = now;
+
+      // Journaliser sur la bande d'arcade
+      logStreamItem(dir, btn, delta);
+
+      if (type === "DIR" && dir !== 5) {
+        if (motionBuffer.length === 0 || motionBuffer[motionBuffer.length - 1].dir !== dir) {
+          motionBuffer.push({ dir, time: now });
+        }
+        if (motionBuffer.length > 20) motionBuffer.shift();
+      }
+
+      const effectiveSteps = getEffectiveSteps();
+      const target = effectiveSteps[currentStepIndex];
+      if (!target) return;
+
+      const tolerance = WINDOW_DELAYS[dom.winSel.value] || 260;
+
+      // Mode Hit-Confirm Réflexe : si BLOCK, le joueur NE DOIT PAS attaquer !
+      if (activeTrainingMode === 'hitconfirm' && hitConfirmState === 'BLOCK' && type === 'BUTTON') {
+        handleComboFailure("WHIFF PUNISH !", "L'adversaire était en garde (BLOCK) : ne lancez pas l'attaque !");
+        return;
+      }
+
+      // Progression directionnelle
+      if (type === "DIR" && target.btn === null) {
+        if (dir === target.dir) {
+          advanceComboStep(now);
+        }
+      }
+      // Validation Bouton d'attaque
+      else if (type === "BUTTON") {
+        if (btn === target.btn) {
+          if (currentStepIndex === effectiveSteps.length - 1) {
+            analyzeComboCompletion(now, tolerance);
+          } else {
+            handleComboFailure("BOUTON PRÉCIPITÉ", "Attaque pressée avant la fin du mouvement cardinal");
+          }
+        } else {
+          handleComboFailure("MAUVAIS BOUTON", `Attendu: ${target.btn || 'Direction seule'}`);
+        }
+      }
+    }
+
+    function advanceComboStep(now) {
+      if (currentStepIndex === 0) comboStartTime = now;
+      currentStepIndex++;
+      sound.step();
+      renderSteps();
+    }
+
+    function analyzeComboCompletion(now, tolerance) {
+      const relevantDirs = motionBuffer.filter(m => m.time >= comboStartTime - 120).map(m => m.dir);
+      const targetMotion = getEffectiveStrictMotion();
+
+      const missing = targetMotion.filter(td => !relevantDirs.includes(td));
+      const dirty = relevantDirs.filter(rd => !targetMotion.includes(rd));
+
+      const totalDuration = Math.round(now - comboStartTime);
+
+      if (missing.length > 0) {
+        handleComboFailure("INPUT MANQUANT", `Direction omise : ${missing.join(', ')}`);
+        return;
+      }
+
+      const allowedMaxTime = tolerance * currentCombo.steps.length;
+      if (totalDuration > allowedMaxTime) {
+        handleComboFailure("TROP LENT", `Fenêtre expirée (+${totalDuration}ms vs max ${allowedMaxTime}ms)`);
+        return;
+      }
+
+      // Succès validé
+      totalAttempts++;
+      successfulCombos++;
+      executionTimes.push(totalDuration);
+      if (executionTimes.length > 30) executionTimes.shift();
+
+      if (dirty.length > 0) {
+        totalDirtyInputs++;
+        currentStreak = 0;
+        sound.dirty();
+        triggerToastFeedback("INPUT SALE", "text-amber-400 glow-amber", `Réussi en ${totalDuration}ms, mais parasite : ${dirty.join(', ')}`);
+      } else {
+        currentStreak++;
+        sound.success();
+        triggerToastFeedback("PARFAIT !", "text-cyan-400 glow-cyan", `Exécution chirurgicale en ${totalDuration}ms (~${Math.round(totalDuration / 16.6)} frames)`);
+      }
+
+      // Mode survie 10x
+      if (activeTrainingMode === 'survival' && currentStreak >= 10) {
+        triggerToastFeedback("SURVIE COMPLÈTE !", "text-fuchsia-400 glow-fuchsia", "10 combos consécutifs sans aucune faute !");
+      }
+
+      updateTelemetryStats();
+
+      setTimeout(() => {
+        currentStepIndex = 0;
+        motionBuffer = [];
+        if (activeTrainingMode === 'hitconfirm') pickRandomHitConfirm();
+        renderSteps();
+      }, 600);
+    }
+
+    function handleComboFailure(title, subtitle) {
+      sound.error();
+      totalAttempts++;
+      currentStreak = 0;
+      updateTelemetryStats();
+      triggerToastFeedback(title, "text-rose-500 glow-red", subtitle);
+
+      currentStepIndex = 0;
+      motionBuffer = [];
+      if (activeTrainingMode === 'hitconfirm') pickRandomHitConfirm();
+      setTimeout(renderSteps, 450);
+    }
+
+    function triggerToastFeedback(title, colorClass, subtitle) {
+      dom.feedTxt.textContent = title;
+      dom.feedTxt.className = `font-arcade text-3xl sm:text-4xl font-extrabold tracking-widest text-glow drop-shadow-md ${colorClass}`;
+      dom.feedSub.textContent = subtitle;
+
+      dom.feedToast.classList.remove('opacity-0', 'scale-90');
+      dom.feedToast.classList.add('opacity-100', 'scale-105');
+
+      setTimeout(() => {
+        dom.feedToast.classList.remove('opacity-100', 'scale-105');
+        dom.feedToast.classList.add('opacity-0', 'scale-90');
+      }, 1000);
+    }
+
+    function pickRandomHitConfirm() {
+      // 60% Hit, 40% Block
+      hitConfirmState = Math.random() > 0.4 ? 'HIT' : 'BLOCK';
+      if (hitConfirmState === 'HIT') {
+        dom.hitStimulusBar.className = 'absolute inset-x-0 top-0 h-2 bg-emerald-500 shadow-lg shadow-emerald-500/50 transition-colors';
+        dom.hitStimulusBanner.className = 'absolute top-2 left-1/2 -translate-x-1/2 text-[10px] font-arcade font-bold px-3 py-0.5 rounded-full uppercase bg-emerald-950 text-emerald-300 border border-emerald-500 block';
+        dom.hitStimulusBanner.textContent = 'HIT ! CONFIRMEZ L\'ATTAQUE';
+      } else {
+        dom.hitStimulusBar.className = 'absolute inset-x-0 top-0 h-2 bg-rose-500 shadow-lg shadow-rose-500/50 transition-colors';
+        dom.hitStimulusBanner.className = 'absolute top-2 left-1/2 -translate-x-1/2 text-[10px] font-arcade font-bold px-3 py-0.5 rounded-full uppercase bg-rose-950 text-rose-300 border border-rose-500 block';
+        dom.hitStimulusBanner.textContent = 'BLOCK ! NE BALANCEZ PAS LE COUP';
+      }
+    }
+
+    function updateTelemetryStats() {
+      dom.streakCounter.textContent = `SÉRIE: ${currentStreak}`;
+      const acc = totalAttempts > 0 ? Math.round((successfulCombos / totalAttempts) * 100) : 100;
+      dom.statAcc.textContent = `${acc}%`;
+      dom.statCounts.textContent = `${successfulCombos} / ${totalAttempts} réussis`;
+      dom.statDirty.textContent = totalDirtyInputs;
+
+      // Calcul Jitter & Moyenne en Frames
+      if (executionTimes.length > 0) {
+        const sum = executionTimes.reduce((a, b) => a + b, 0);
+        const avg = Math.round(sum / executionTimes.length);
+        dom.statSpeed.textContent = `${avg} ms`;
+
+        // Écart-type (Jitter)
+        const variance = executionTimes.reduce((acc, val) => acc + Math.pow(val - avg, 2), 0) / executionTimes.length;
+        const stdDevFrames = (Math.sqrt(variance) / 16.66).toFixed(1);
+        dom.statJitter.textContent = `±${stdDevFrames}f`;
+      }
+    }
+
+    function logStreamItem(dir, btn, delta) {
+      if (dom.stream.children.length === 1 && dom.stream.children[0].classList.contains('text-center')) {
+        dom.stream.innerHTML = '';
+      }
+      const item = document.createElement('div');
+      item.className = 'flex items-center justify-between px-2.5 py-1 rounded bg-slate-950/80 border border-slate-800 text-[11px]';
+
+      let badges = `<div class="flex items-center gap-2">
+        <span class="w-5 h-5 rounded flex items-center justify-center font-bold bg-slate-800 text-slate-300">${DIR_SYMBOLS[dir] || dir}</span>`;
+      if (btn) {
+        badges += `<span class="px-1.5 py-0.2 rounded text-[10px] font-bold bg-fuchsia-950 border border-fuchsia-800 text-fuchsia-300">${btn}</span>`;
+      }
+      badges += '</div>';
+
+      const frameCount = delta > 0 ? `${Math.round(delta / 16.6)}f` : '0f';
+      const timeTag = `<div class="text-slate-500 font-mono text-[10px] flex items-center gap-1.5">
+        <span>+${Math.round(delta)}ms</span>
+        <span class="text-cyan-400 font-bold">(${frameCount})</span>
+      </div>`;
+
+      item.innerHTML = badges + timeTag;
+      if (dom.stream.children.length > 25) dom.stream.removeChild(dom.stream.lastChild);
+      dom.stream.insertBefore(item, dom.stream.firstChild);
+    }
+
+    function showToast(message, iconName = 'check-circle') {
+      const toast = document.getElementById('toast');
+      const toastMsg = document.getElementById('toast-message');
+      const toastIcon = document.getElementById('toast-icon');
+
+      toastMsg.textContent = message;
+      toastIcon.setAttribute('data-lucide', iconName);
+      lucide.createIcons();
+
+      toast.classList.remove('translate-y-20', 'opacity-0');
+      toast.classList.add('translate-y-0', 'opacity-100');
+
+      setTimeout(() => {
+        toast.classList.remove('translate-y-0', 'opacity-100');
+        toast.classList.add('translate-y-20', 'opacity-0');
+      }, 2600);
+    }
+
+    // ==========================================
+    // 8. ÉCOUTEURS D'ÉVÉNEMENTS (TOUCHES & UI)
+    // ==========================================
+    window.addEventListener('keydown', (e) => {
+      // Ignorer si l'utilisateur est en train de taper dans un champ de texte de modal
+      if (['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) return;
+
+      sound.unlock();
+
+      // Touche TAB pour inverser le côté
+      if (e.code === 'Tab') {
+        e.preventDefault();
+        isSideP2 = !isSideP2;
+        dom.mirrorBadge.textContent = isSideP2 ? 'Côté P2 (Miroir)' : 'Côté P1';
+        showToast(isSideP2 ? 'Mode Côté P2 activé' : 'Mode Côté P1 activé', 'repeat');
+        renderSteps();
+        return;
+      }
+
+      if (["Space", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.code)) {
+        e.preventDefault();
+      }
+      if (e.repeat) return;
+
+      // Détection hybride (e.code prioritaire puis e.key pour compatibilité absolue)
+      let action = keyActions[e.code] || keyActions[e.key];
+      if (!action) return;
+
+      if (["UP", "DOWN", "LEFT", "RIGHT"].includes(action)) {
+        activeDirsTimestamp[action] = performance.now();
+        const newDir = calculateSOCDDirection();
+        if (newDir !== currentDirNumpad) {
+          currentDirNumpad = newDir;
+          updateControllerVisuals(newDir);
+          processInputEvent("DIR", newDir, null);
+        }
+      } else {
+        flashAttackButton(action);
+        processInputEvent("BUTTON", currentDirNumpad, action);
+      }
+    });
+
+    window.addEventListener('keyup', (e) => {
+      if (['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) return;
+
+      let action = keyActions[e.code] || keyActions[e.key];
+      if (["UP", "DOWN", "LEFT", "RIGHT"].includes(action)) {
+        activeDirsTimestamp[action] = 0;
+        const newDir = calculateSOCDDirection();
+        if (newDir !== currentDirNumpad) {
+          currentDirNumpad = newDir;
+          updateControllerVisuals(newDir);
+          processInputEvent("DIR", newDir, null);
+        }
+      }
+    });
+
+    // Basculement vues de contrôleur
+    document.querySelectorAll('.ctrl-tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.ctrl-tab-btn').forEach(b => {
+          b.classList.remove('active', 'bg-cyan-950', 'text-cyan-300', 'border-cyan-700/60');
+          b.classList.add('bg-slate-950', 'text-slate-400', 'border-slate-800');
+        });
+        btn.classList.add('active', 'bg-cyan-950', 'text-cyan-300', 'border-cyan-700/60');
+        btn.classList.remove('bg-slate-950', 'text-slate-400', 'border-slate-800');
+
+        const viewType = btn.getAttribute('data-controller-view');
+        document.querySelectorAll('.controller-viewport').forEach(vp => vp.classList.add('hidden'));
+        document.getElementById(`view-${viewType}`).classList.remove('hidden');
+      });
+    });
+
+    // Modes d'entraînement cognitifs
+    const modeButtons = {
+      std: document.getElementById('mode-std-btn'),
+      hitconfirm: document.getElementById('mode-hitconfirm-btn'),
+      blind: document.getElementById('mode-blind-btn'),
+      survival: document.getElementById('mode-survival-btn')
+    };
+
+    Object.entries(modeButtons).forEach(([key, btn]) => {
+      btn.addEventListener('click', () => {
+        activeTrainingMode = key;
+        Object.values(modeButtons).forEach(b => {
+          b.className = 'training-mode-pill px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-slate-950 text-slate-400 border border-slate-800 hover:text-slate-200 transition';
+        });
+        btn.className = 'training-mode-pill px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-cyan-950 text-cyan-300 border border-cyan-700/60 transition';
+
+        if (key === 'hitconfirm') {
+          pickRandomHitConfirm();
+        } else {
+          dom.hitStimulusBar.className = 'absolute inset-x-0 top-0 h-1.5 bg-slate-800 transition-colors';
+          dom.hitStimulusBanner.className = 'hidden';
+        }
+        renderSteps();
+      });
+    });
+
+    // Inversion Côté P1 / P2
+    document.getElementById('toggle-mirror-btn').addEventListener('click', () => {
+      isSideP2 = !isSideP2;
+      dom.mirrorBadge.textContent = isSideP2 ? 'Côté P2 (Miroir)' : 'Côté P1';
+      renderSteps();
+    });
+
+    // Toggle Audio
+    document.getElementById('toggle-audio-btn').addEventListener('click', () => {
+      sound.enabled = !sound.enabled;
+      if (sound.enabled) {
+        sound.unlock();
+        dom.audioText.textContent = "SFX ON";
+        dom.audioText.className = "hidden lg:inline text-[11px] text-cyan-400 font-medium";
+        dom.audioIcon.setAttribute('data-lucide', 'volume-2');
+        showToast("Effets audio activés", "volume-2");
+      } else {
+        dom.audioText.textContent = "SFX OFF";
+        dom.audioText.className = "hidden lg:inline text-[11px] text-slate-500 font-medium";
+        dom.audioIcon.setAttribute('data-lucide', 'volume-x');
+        showToast("Effets audio coupés", "volume-x");
+      }
+      lucide.createIcons();
+    });
+
+    // Sélecteur de preset combo
+    dom.presetSel.addEventListener('change', (e) => {
+      loadCombo(comboLibrary[e.target.value]);
+    });
+
+    // Modals
+    const ioModal = document.getElementById('io-modal');
+    document.getElementById('open-io-btn').addEventListener('click', () => {
+      updateExportPreviews();
+      ioModal.classList.remove('hidden');
+    });
+    document.getElementById('open-share-btn').addEventListener('click', () => {
+      updateExportPreviews();
+      ioModal.classList.remove('hidden');
+      switchIoTab('export');
+    });
+    document.getElementById('close-io-modal').addEventListener('click', () => ioModal.classList.add('hidden'));
+
+    const keyModal = document.getElementById('keybinds-modal');
+    document.getElementById('open-keybinds-btn').addEventListener('click', () => keyModal.classList.remove('hidden'));
+    document.getElementById('close-keybinds-btn').addEventListener('click', () => keyModal.classList.add('hidden'));
+
+    const creatorModal = document.getElementById('creator-modal');
+    document.getElementById('open-creator-btn').addEventListener('click', () => creatorModal.classList.remove('hidden'));
+    document.getElementById('close-creator-btn').addEventListener('click', () => creatorModal.classList.add('hidden'));
+
+    // Onglets Import / Export
+    function switchIoTab(tab) {
+      const expBtn = document.getElementById('tab-export-btn');
+      const impBtn = document.getElementById('tab-import-btn');
+      const expSec = document.getElementById('section-export');
+      const impSec = document.getElementById('section-import');
+
+      if (tab === 'export') {
+        expBtn.className = "px-4 py-2 text-cyan-400 border-b-2 border-cyan-400";
+        impBtn.className = "px-4 py-2 text-slate-400 hover:text-slate-200";
+        expSec.classList.remove('hidden');
+        impSec.classList.add('hidden');
+      } else {
+        impBtn.className = "px-4 py-2 text-cyan-400 border-b-2 border-cyan-400";
+        expBtn.className = "px-4 py-2 text-slate-400 hover:text-slate-200";
+        impSec.classList.remove('hidden');
+        expSec.classList.add('hidden');
+      }
+    }
+    document.getElementById('tab-export-btn').addEventListener('click', () => switchIoTab('export'));
+    document.getElementById('tab-import-btn').addEventListener('click', () => switchIoTab('import'));
+
+    // Actions Exportation
+    document.getElementById('btn-export-download-json').addEventListener('click', () => {
+      downloadJsonFile(generateFullLibraryJson());
+    });
+    document.getElementById('btn-export-copy-json').addEventListener('click', () => {
+      copyToClipboard(generateFullLibraryJson(), "Bibliothèque JSON copiée !");
+    });
+    document.getElementById('btn-copy-url').addEventListener('click', () => {
+      copyToClipboard(dom.shareUrlInput.value, "Lien partageable copié dans le presse-papier !");
+    });
+
+    // Actions Importation
+    const dropZone = document.getElementById('drop-zone');
+    const fileInput = document.getElementById('file-input-json');
+
+    dropZone.addEventListener('click', () => fileInput.click());
+    dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('border-cyan-400', 'bg-cyan-950/20'); });
+    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('border-cyan-400', 'bg-cyan-950/20'));
+    dropZone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropZone.classList.remove('border-cyan-400', 'bg-cyan-950/20');
+      if (e.dataTransfer.files.length > 0) {
+        readJsonFile(e.dataTransfer.files[0]);
+      }
+    });
+    fileInput.addEventListener('change', (e) => {
+      if (e.target.files.length > 0) readJsonFile(e.target.files[0]);
+    });
+
+    function readJsonFile(file) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        document.getElementById('import-raw-input').value = event.target.result;
+        showToast("Fichier chargé ! Choisissez Fusionner ou Écraser.", "file-text");
+      };
+      reader.readAsText(file);
+    }
+
+    document.getElementById('btn-import-merge').addEventListener('click', () => {
+      const content = document.getElementById('import-raw-input').value.trim();
+      if (!content) { showToast("Veuillez coller ou charger un JSON", "alert-circle"); return; }
+      processImportData(content, true);
+    });
+
+    document.getElementById('btn-import-replace').addEventListener('click', () => {
+      const content = document.getElementById('import-raw-input').value.trim();
+      if (!content) { showToast("Veuillez coller ou charger un JSON", "alert-circle"); return; }
+      processImportData(content, false);
+    });
+
+    // Créateur de combo
+    document.getElementById('btn-save-created-combo').addEventListener('click', () => {
+      const title = document.getElementById('create-name').value.trim() || 'Combo Personnalisé';
+      const game = document.getElementById('create-game').value.trim() || 'Custom Fighter';
+      const rawSeq = document.getElementById('create-sequence').value.trim();
+
+      if (!rawSeq) {
+        showToast("Veuillez entrer une séquence (ex: 2, 3, 6+HP)", "alert-circle");
+        return;
+      }
+
+      // Parser la séquence
+      const tokens = rawSeq.split(',').map(t => t.trim());
+      const steps = [];
+      const strictMotion = [];
+
+      tokens.forEach(tok => {
+        let dir = 5;
+        let btn = null;
+
+        if (tok.includes('+')) {
+          const parts = tok.split('+');
+          dir = parseInt(parts[0].replace(/\D/g, '')) || 5;
+          btn = parts[1].toUpperCase().trim();
+        } else {
+          dir = parseInt(tok.replace(/\D/g, '')) || 5;
+        }
+
+        steps.push({ dir, btn, label: btn ? `${DIR_SYMBOLS[dir] || dir}+${btn}` : `${DIR_SYMBOLS[dir] || dir}` });
+        if (dir !== 5) strictMotion.push(dir);
+      });
+
+      const newCombo = {
+        id: `custom_${Date.now()}`,
+        title,
+        game,
+        desc: `Combo créé par l'utilisateur (${rawSeq})`,
+        notation: tokens.join(' ➔ '),
+        strictMotion,
+        steps
+      };
+
+      comboLibrary.unshift(newCombo);
+      saveLibraryLocally();
+      populatePresetDropdown();
+      loadCombo(newCombo);
+      creatorModal.classList.add('hidden');
+      showToast(`Combo "${title}" ajouté avec succès !`, "check-circle");
+    });
+
+    // Réinitialisation des statistiques
+    document.getElementById('reset-stats-btn').addEventListener('click', () => {
+      totalAttempts = 0; successfulCombos = 0; currentStreak = 0; totalDirtyInputs = 0; executionTimes = [];
+      updateTelemetryStats();
+      showToast("Statistiques réinitialisées", "rotate-ccw");
+    });
+
+    document.getElementById('clear-history-btn').addEventListener('click', () => {
+      dom.stream.innerHTML = '<div class="text-center text-slate-600 text-xs py-12 font-sans">En attente d\'inputs...</div>';
+    });
+
+    // ==========================================
+    // 9. GAMEPAD API POLLING LOOP
+    // ==========================================
+    let lastGamepadButtons = [];
+    function pollGamepad() {
+      const gamepads = navigator.getGamepads ? navigator.getGamepads() : [];
+      let gp = null;
+      for (let i = 0; i < gamepads.length; i++) {
+        if (gamepads[i]) { gp = gamepads[i]; break; }
+      }
+
+      const badge = document.getElementById('gamepad-badge');
+      if (gp) {
+        badge.textContent = `Gamepad : ${gp.id.slice(0, 16)}...`;
+        badge.className = "text-[10px] text-emerald-400 font-mono";
+
+        // Directions D-pad & Sticks
+        const dUp = gp.buttons[12] && gp.buttons[12].pressed;
+        const dDown = gp.buttons[13] && gp.buttons[13].pressed;
+        const dLeft = gp.buttons[14] && gp.buttons[14].pressed;
+        const dRight = gp.buttons[15] && gp.buttons[15].pressed;
+
+        const stickX = gp.axes[0] || 0;
+        const stickY = gp.axes[1] || 0;
+
+        const isLeft = dLeft || stickX < -0.45;
+        const isRight = dRight || stickX > 0.45;
+        const isUp = dUp || stickY < -0.45;
+        const isDown = dDown || stickY > 0.45;
+
+        activeDirsTimestamp.LEFT = isLeft ? (activeDirsTimestamp.LEFT || performance.now()) : 0;
+        activeDirsTimestamp.RIGHT = isRight ? (activeDirsTimestamp.RIGHT || performance.now()) : 0;
+        activeDirsTimestamp.UP = isUp ? (activeDirsTimestamp.UP || performance.now()) : 0;
+        activeDirsTimestamp.DOWN = isDown ? (activeDirsTimestamp.DOWN || performance.now()) : 0;
+
+        const newDir = calculateSOCDDirection();
+        if (newDir !== currentDirNumpad) {
+          currentDirNumpad = newDir;
+          updateControllerVisuals(newDir);
+          processInputEvent("DIR", newDir, null);
+        }
+
+        // Boutons de combat (A, B, X, Y, RB, RT...)
+        const mapping = { 2: "LP", 3: "MP", 5: "HP", 0: "LK", 1: "MK", 7: "HK" };
+        Object.entries(mapping).forEach(([btnIdx, action]) => {
+          const idx = parseInt(btnIdx);
+          const isPressed = gp.buttons[idx] && gp.buttons[idx].pressed;
+          const wasPressed = lastGamepadButtons[idx];
+
+          if (isPressed && !wasPressed) {
+            flashAttackButton(action);
+            processInputEvent("BUTTON", currentDirNumpad, action);
+          }
+          lastGamepadButtons[idx] = isPressed;
+        });
+      } else {
+        badge.textContent = "Gamepad déconnecté";
+        badge.className = "text-[10px] text-slate-500 font-mono";
+      }
+
+      requestAnimationFrame(pollGamepad);
+    }
+    requestAnimationFrame(pollGamepad);
+
+    window.onload = init;
+  </script>
+</body>
+</html>
