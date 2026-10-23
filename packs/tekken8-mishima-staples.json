@@ -1,0 +1,54 @@
+[
+  {
+    "id": "t8_kaz_112",
+    "title": "Kazuya - 1,1,2 Flash Punish (i10)",
+    "char": "Kazuya",
+    "diff": "normal",
+    "timingMs": 260,
+    "inputs": [
+      { "dir": "5", "btn": "LP", "label": "1" },
+      { "dir": "5", "btn": "LP", "label": "1" },
+      { "dir": "5", "btn": "RP", "label": "2" }
+    ]
+  },
+  {
+    "id": "t8_kaz_hellsweep",
+    "title": "Kazuya - Spinning Demon / Hellsweep (f,n,d,df+4,1)",
+    "char": "Kazuya",
+    "diff": "strict",
+    "timingMs": 210,
+    "inputs": [
+      { "dir": "6", "btn": "", "label": "f" },
+      { "dir": "5", "btn": "", "label": "n" },
+      { "dir": "2", "btn": "", "label": "d" },
+      { "dir": "3", "btn": "RK", "label": "df+4" },
+      { "dir": "5", "btn": "LP", "label": "1" }
+    ]
+  },
+  {
+    "id": "t8_reina_sen_3",
+    "title": "Reina - Sentai Transition String (f+2,3 > SEN 3)",
+    "char": "Reina",
+    "diff": "normal",
+    "timingMs": 240,
+    "inputs": [
+      { "dir": "6", "btn": "RP", "label": "f+2" },
+      { "dir": "5", "btn": "LK", "label": "3" },
+      { "dir": "5", "btn": "LK", "label": "SEN 3" }
+    ]
+  },
+  {
+    "id": "t8_wave_dash_step",
+    "title": "Mishima - Wavedash Single Loop (f, n, d, df, f)",
+    "char": "Mishima Movement",
+    "diff": "strict",
+    "timingMs": 180,
+    "inputs": [
+      { "dir": "6", "btn": "", "label": "f" },
+      { "dir": "5", "btn": "", "label": "n" },
+      { "dir": "2", "btn": "", "label": "d" },
+      { "dir": "3", "btn": "", "label": "df" },
+      { "dir": "6", "btn": "", "label": "f" }
+    ]
+  }
+]

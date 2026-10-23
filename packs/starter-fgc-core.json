@@ -1,0 +1,77 @@
+[
+  {
+    "id": "core_hadoken",
+    "title": "Street Fighter - Hadoken (236P)",
+    "char": "Shoto Standard",
+    "diff": "normal",
+    "timingMs": 350,
+    "inputs": [
+      { "dir": "2", "btn": "", "label": "d" },
+      { "dir": "3", "btn": "", "label": "df" },
+      { "dir": "6", "btn": "HP", "label": "f+HP" }
+    ]
+  },
+  {
+    "id": "core_shoryuken",
+    "title": "Street Fighter - Shoryuken DP (623P)",
+    "char": "Shoto Standard",
+    "diff": "strict",
+    "timingMs": 240,
+    "inputs": [
+      { "dir": "6", "btn": "", "label": "f" },
+      { "dir": "2", "btn": "", "label": "d" },
+      { "dir": "3", "btn": "HP", "label": "df+HP" }
+    ]
+  },
+  {
+    "id": "core_tatsu",
+    "title": "Street Fighter - Tatsumaki (214K)",
+    "char": "Shoto Standard",
+    "diff": "normal",
+    "timingMs": 320,
+    "inputs": [
+      { "dir": "2", "btn": "", "label": "d" },
+      { "dir": "1", "btn": "", "label": "db" },
+      { "dir": "4", "btn": "HK", "label": "b+HK" }
+    ]
+  },
+  {
+    "id": "core_ewgf",
+    "title": "Tekken - EWGF (Electric Wind God Fist)",
+    "char": "Mishima Clan",
+    "diff": "justframe",
+    "timingMs": 130,
+    "inputs": [
+      { "dir": "6", "btn": "", "label": "f" },
+      { "dir": "5", "btn": "", "label": "n" },
+      { "dir": "2", "btn": "", "label": "d" },
+      { "dir": "3", "btn": "RP", "label": "df+2" }
+    ]
+  },
+  {
+    "id": "core_super_qcf2",
+    "title": "2D Fighter - Double Quart de Cercle Super (236236P)",
+    "char": "Universal Super",
+    "diff": "strict",
+    "timingMs": 280,
+    "inputs": [
+      { "dir": "2", "btn": "", "label": "d" },
+      { "dir": "3", "btn": "", "label": "df" },
+      { "dir": "6", "btn": "", "label": "f" },
+      { "dir": "2", "btn": "", "label": "d" },
+      { "dir": "3", "btn": "", "label": "df" },
+      { "dir": "6", "btn": "HP", "label": "f+HP" }
+    ]
+  },
+  {
+    "id": "core_kof_short_hop",
+    "title": "KOF / Anime - Short Hop Instant Input",
+    "char": "Movement Practice",
+    "diff": "justframe",
+    "timingMs": 80,
+    "inputs": [
+      { "dir": "2", "btn": "", "label": "tap d" },
+      { "dir": "8", "btn": "", "label": "tap u (release fast)" }
+    ]
+  }
+]
