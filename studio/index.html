@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>FightFlow Data Studio • Tekken 8 Full Roster & FGC Normalizer</title>
+  <title>FightFlow Data Studio v2.0 • Multi-Game FGC Pipeline</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700;800&family=Space+Grotesk:wght@600;700;900&display=swap" rel="stylesheet">
@@ -18,7 +18,8 @@
       --accent-studio: #00e5ff;
       --accent-studio-glow: rgba(0, 229, 255, 0.25);
       --accent-t8: #ff2a5f;
-      --accent-t8-glow: rgba(255, 42, 95, 0.25);
+      --accent-cotw: #00ff88;
+      --accent-sf6: #ffb800;
       --accent-gold: #ffb800;
       --text: #f0f4fc;
       --subtext: #8e9db7;
@@ -88,12 +89,12 @@
     .btn-link:hover { color: #fff; border-color: var(--border-bright); }
 
     .main-layout {
-      max-width: 1400px;
+      max-width: 1440px;
       width: 100%;
       margin: 0 auto;
       padding: 24px;
       display: grid;
-      grid-template-columns: 340px 1fr;
+      grid-template-columns: 360px 1fr;
       gap: 24px;
       flex: 1;
     }
@@ -102,7 +103,7 @@
       .main-layout { grid-template-columns: 1fr; }
     }
 
-    /* Panneau Latéral : Sélecteur Roster & Source */
+    /* Barre Latérale */
     .sidebar {
       display: flex;
       flex-direction: column;
@@ -117,14 +118,53 @@
     }
 
     .panel-box h3 {
-      font-size: 0.95rem;
+      font-size: 0.85rem;
       text-transform: uppercase;
       letter-spacing: 1px;
       color: var(--accent-studio);
-      margin-bottom: 14px;
+      margin-bottom: 12px;
       display: flex;
       align-items: center;
       justify-content: space-between;
+    }
+
+    /* Sélecteur de Jeu / Licence */
+    .game-switch-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+
+    .game-tab-btn {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 6px;
+      font-family: var(--font-display);
+      font-weight: 700;
+      font-size: 0.8rem;
+      color: var(--subtext);
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.2s ease;
+    }
+
+    .game-tab-btn:hover { border-color: var(--border-bright); color: #fff; }
+    .game-tab-btn.active[data-game="tekken8"] {
+      border-color: var(--accent-t8);
+      background: rgba(255, 42, 95, 0.12);
+      color: #fff;
+    }
+    .game-tab-btn.active[data-game="cotw"] {
+      border-color: var(--accent-cotw);
+      background: rgba(0, 255, 136, 0.12);
+      color: #fff;
+    }
+    .game-tab-btn.active[data-game="sf6"] {
+      border-color: var(--accent-sf6);
+      background: rgba(255, 184, 0, 0.12);
+      color: #fff;
     }
 
     .roster-select {
@@ -157,7 +197,7 @@
     }
 
     .char-profile-name {
-      font-size: 1.1rem;
+      font-size: 1.15rem;
       font-weight: 900;
       font-family: var(--font-display);
       color: #fff;
@@ -170,16 +210,16 @@
     }
 
     .char-badge {
-      background: rgba(255, 42, 95, 0.15);
-      color: var(--accent-t8);
-      border: 1px solid rgba(255, 42, 95, 0.3);
+      background: rgba(0, 229, 255, 0.12);
+      color: var(--accent-studio);
+      border: 1px solid rgba(0, 229, 255, 0.3);
       padding: 2px 6px;
       border-radius: 4px;
       font-size: 0.7rem;
       font-weight: 700;
     }
 
-    /* Filtres Movelist */
+    /* Filtres Contextuels */
     .filter-group {
       display: flex;
       flex-direction: column;
@@ -214,7 +254,7 @@
     }
     .pill-btn:hover { border-color: var(--border-bright); color: #fff; }
     .pill-btn.active {
-      background: rgba(0, 229, 255, 0.12);
+      background: rgba(0, 229, 255, 0.15);
       border-color: var(--accent-studio);
       color: var(--accent-studio);
       font-weight: 700;
@@ -325,6 +365,7 @@
       align-items: center;
       gap: 4px;
       margin-top: 4px;
+      flex-wrap: wrap;
     }
 
     .step-chip {
@@ -349,7 +390,7 @@
     .hit-h { background: rgba(0, 229, 255, 0.15); color: var(--accent-studio); border: 1px solid rgba(0, 229, 255, 0.3); }
     .hit-m { background: rgba(255, 184, 0, 0.15); color: var(--accent-gold); border: 1px solid rgba(255, 184, 0, 0.3); }
     .hit-l { background: rgba(255, 42, 95, 0.15); color: var(--accent-t8); border: 1px solid rgba(255, 42, 95, 0.3); }
-    .hit-sm, .hit-sp { background: #262e40; color: #cbd5e1; }
+    .hit-ex { background: rgba(0, 255, 136, 0.15); color: var(--accent-cotw); border: 1px solid rgba(0, 255, 136, 0.3); }
 
     /* Modal Export JSON */
     .modal-overlay {
@@ -422,7 +463,7 @@
   <header class="top-nav">
     <div class="brand">
       <span>FIGHTFLOW</span>
-      <span class="brand-tag">DATA STUDIO</span>
+      <span class="brand-tag">DATA STUDIO v2.0</span>
     </div>
     <div class="nav-actions">
       <a href="../lab/index.html" class="btn-link">⚡ Aller au Lab</a>
@@ -432,90 +473,50 @@
 
   <div class="main-layout">
     
-    <!-- Panneau Gauche : Sélection Combattant & Filtres -->
+    <!-- Panneau Gauche : Sélection Licence, Combattant & Filtres -->
     <aside class="sidebar">
       
       <div class="panel-box">
+        <h3>1. Choisir la Licence</h3>
+        <div class="game-switch-grid">
+          <button class="game-tab-btn active" data-game="tekken8" onclick="switchGame('tekken8')">Tekken 8</button>
+          <button class="game-tab-btn" data-game="cotw" onclick="switchGame('cotw')">Garou CotW</button>
+          <button class="game-tab-btn" data-game="sf6" onclick="switchGame('sf6')">Street Fighter 6</button>
+        </div>
+
         <h3>
-          <span>Combattant T8</span>
-          <span style="font-size: 0.75rem; color: var(--accent-t8);" id="roster-count">35 Persos</span>
+          <span id="label-roster">Combattants</span>
+          <span style="font-size: 0.75rem; color: var(--accent-studio);" id="roster-count">0 Persos</span>
         </h3>
         
         <select id="char-select" class="roster-select" onchange="onSelectCharacter(this.value)">
-          <optgroup label="── Famille Mishima ──">
-            <option value="kazuya">Kazuya Mishima</option>
-            <option value="jin">Jin Kazama</option>
-            <option value="reina">Reina</option>
-            <option value="devil_jin">Devil Jin</option>
-            <option value="heihachi">Heihachi Mishima (DLC)</option>
-          </optgroup>
-          <optgroup label="── Vétérans & Icônes ──">
-            <option value="paul">Paul Phoenix</option>
-            <option value="bryan">Bryan Fury</option>
-            <option value="law">Marshall Law</option>
-            <option value="king">King</option>
-            <option value="hwoarang">Hwoarang</option>
-            <option value="steve">Steve Fox</option>
-            <option value="yoshimitsu">Yoshimitsu</option>
-            <option value="nina">Nina Williams</option>
-            <option value="lee">Lee Chaolan</option>
-            <option value="jun">Jun Kazama</option>
-            <option value="asuka">Asuka Kazama</option>
-            <option value="feng">Feng Wei</option>
-            <option value="lars">Lars Alexandersson</option>
-            <option value="alisa">Alisa Bosconovitch</option>
-            <option value="jack8">Jack-8</option>
-            <option value="raven">Raven</option>
-            <option value="leo">Leo</option>
-            <option value="lili">Lili</option>
-            <option value="claudio">Claudio Serafino</option>
-            <option value="shaheen">Shaheen</option>
-            <option value="zafina">Zafina</option>
-            <option value="leroy">Leroy Smith</option>
-            <option value="kuma">Kuma</option>
-            <option value="panda">Panda</option>
-          </optgroup>
-          <optgroup label="── Nouveaux T8 & DLCs ──">
-            <option value="azucena">Azucena</option>
-            <option value="victor">Victor Chevalier</option>
-            <option value="eddy">Eddy Gordo (DLC)</option>
-            <option value="lidia">Lidia Sobieska (DLC)</option>
-            <option value="clive">Clive Rosfield (Guest)</option>
-          </optgroup>
+          <!-- Rempli dynamiquement -->
         </select>
 
         <div class="char-profile-card" id="char-profile">
-          <div class="char-profile-name" id="char-name">Kazuya Mishima</div>
-          <div class="char-badge-row" id="char-badges">
-            <span class="char-badge">Mishima Style</span>
-            <span class="char-badge">EWGF Core</span>
-            <span class="char-badge">50/50 Vortex</span>
-          </div>
-          <div style="color: var(--subtext); margin-top: 6px;" id="char-stats">
-            Chargement de la movelist...
-          </div>
+          <div class="char-profile-name" id="char-name">Sélectionnez un personnage</div>
+          <div class="char-badge-row" id="char-badges"></div>
+          <div style="color: var(--subtext); margin-top: 6px;" id="char-stats">Chargement...</div>
         </div>
 
-        <!-- Filtres Avancés de Coups -->
+        <!-- Filtres Spécifiques au Jeu Actif -->
         <div class="filter-group">
-          <div class="filter-title">Catégories d'Entraînement</div>
-          <div class="filter-pills">
-            <button class="pill-btn active" onclick="setFilter('all', this)">Tous</button>
-            <button class="pill-btn" onclick="setFilter('punish10', this)">i10 Punish</button>
-            <button class="pill-btn" onclick="setFilter('punish15', this)">i14-i15 Launchers</button>
-            <button class="pill-btn" onclick="setFilter('plus', this)">Plus on Block (+)</button>
-            <button class="pill-btn" onclick="setFilter('heat', this)">Heat Moves</button>
-            <button class="pill-btn" onclick="setFilter('ws', this)">While Standing</button>
+          <div class="filter-title">Catégories & Propriétés</div>
+          <div class="filter-pills" id="filter-pills-container">
+            <!-- Injecté dynamiquement selon la licence -->
           </div>
         </div>
 
       </div>
 
-      <!-- Quick Parse Manuel -->
+      <!-- Quick Parse Manuel multi-dialectes -->
       <div class="panel-box">
-        <h3>Convertisseur Rapide 2D/3D</h3>
-        <textarea id="quick-input" placeholder="Ex: f, n, d, df+2 > b+1,2 ou 236P" style="width:100%; height:75px; background:var(--card); border:1px solid var(--border); color:#fff; border-radius:6px; padding:8px; font-family:var(--font-mono); font-size:0.8rem; resize:none;"></textarea>
-        <button class="btn-action primary" style="width:100%; margin-top:10px;" onclick="parseQuickInput()">Parser & Ajouter</button>
+        <h3>Convertisseur Rapide Direct</h3>
+        <p style="font-size:0.75rem; color:var(--subtext); margin-bottom:8px;">
+          Compatible notations Tekken (<code style="color:var(--accent-gold);">f,n,d,df+2</code>) ou 2D (<code style="color:var(--accent-gold);">236A, 623HP</code>) :
+        </p>
+        <textarea id="quick-input" placeholder="Ex: 236A~AB ou f,n,d,df+2 > 3,1" style="width:100%; height:75px; background:var(--card); border:1px solid var(--border); color:#fff; border-radius:6px; padding:8px; font-family:var(--font-mono); font-size:0.8rem; resize:none;"></textarea>
+        <button class="btn-action primary" style="width:100%; margin-top:10px;" onclick="parseQuickInput()">Parser & Ajouter au Tableau</button>
       </div>
 
     </aside>
@@ -526,32 +527,32 @@
         
         <div class="table-toolbar">
           <div style="display:flex; align-items:center; gap:12px;">
-            <input type="text" id="search-input" class="search-box" placeholder="Chercher coup ou input (ex: df2)..." oninput="renderTable()">
+            <input type="text" id="search-input" class="search-box" placeholder="Filtrer coup ou commande..." oninput="renderTable()">
             <span style="font-family:var(--font-mono); font-size:0.8rem; color:var(--subtext);" id="count-label">0 coups</span>
           </div>
 
           <div class="batch-actions">
             <button class="btn-action" onclick="selectAllVisible(true)">Tout cocher</button>
             <button class="btn-action" onclick="selectAllVisible(false)">Décocher</button>
-            <button class="btn-action primary" onclick="openExportModal()">Exporter la sélection vers Lab (JSON)</button>
+            <button class="btn-action primary" onclick="openExportModal()">Exporter vers FightFlow Lab (JSON)</button>
           </div>
         </div>
 
-        <div style="overflow-x: auto; max-height: 650px;">
+        <div style="overflow-x: auto; max-height: 680px;">
           <table class="moves-table">
             <thead>
               <tr>
                 <th style="width: 40px;"><input type="checkbox" id="master-check" onchange="toggleMaster(this)"></th>
-                <th>Commande Tekken</th>
-                <th>Propriétés</th>
+                <th>Commande Officielle</th>
+                <th>Propriété</th>
                 <th>Dégâts</th>
                 <th>Startup</th>
-                <th>Garde</th>
-                <th>Nom / Notes</th>
+                <th>En Garde</th>
+                <th>Nom du Coup / Propriétés Clés</th>
               </tr>
             </thead>
             <tbody id="moves-tbody">
-              <!-- Rempli en JS -->
+              <!-- Rempli dynamiquement -->
             </tbody>
           </table>
         </div>
@@ -565,131 +566,144 @@
   <div class="modal-overlay" id="export-modal">
     <div class="modal-window">
       <div class="modal-header">
-        <h3 style="color:var(--accent-studio);">Exportation Prête pour FightFlow Lab</h3>
+        <h3 style="color:var(--accent-studio);">Exportation Vers FightFlow Lab</h3>
         <button onclick="closeExportModal()" style="background:none; border:none; color:#fff; font-size:1.2rem; cursor:pointer;">✕</button>
       </div>
       <div class="modal-body">
         <p style="color:var(--subtext); font-size:0.85rem; margin-bottom:12px;">
-          Ce JSON est directement consommable par le menu <strong>Importer</strong> de FightFlow Lab.
+          Les coups sélectionnés sont prêts. Vous pouvez les ouvrir en 1 clic dans le Lab ou télécharger le pack JSON.
         </p>
         <textarea id="json-output" class="json-code" readonly></textarea>
       </div>
       <div class="modal-footer">
-        <button class="btn-action" onclick="downloadJSON()">Télécharger fichier .json</button>
+        <button class="btn-action" onclick="downloadJSON()">Télécharger pack .json</button>
         <div style="display:flex; gap:10px;">
           <button class="btn-action" onclick="copyJSON()">Copier le JSON</button>
-          <button class="btn-action primary d-none" onclick="launchInLab()">Ouvrir directement dans le Lab →</button>
+          <button class="btn-action primary" onclick="launchInLab()">Ouvrir directement dans le Lab →</button>
         </div>
       </div>
     </div>
   </div>
 
   <script>
-    // --- 1. Base Complète du Roster & Générateur Dynamique de Coups T8 ---
-    const ROSTER_METADATA = {
-      kazuya: { name: "Kazuya Mishima", archetype: "Mishima Vortex", tags: ["EWGF", "Hellsweep", "i10 Flash"] },
-      jin: { name: "Jin Kazama", archetype: "All-Round Karate", tags: ["Parry", "EWHF", "d2 Poke"] },
-      reina: { name: "Reina", archetype: "Taido / Mishima", tags: ["Sentai", "Wrath", "Wind God"] },
-      devil_jin: { name: "Devil Jin", archetype: "Dark Mishima", tags: ["Laser", "Mourning Crow", "Hellsweep"] },
-      heihachi: { name: "Heihachi Mishima", archetype: "Iron Fist Supreme", tags: ["OTGF", "Twin Pistons", "Iron Stance"] },
-      paul: { name: "Paul Phoenix", archetype: "Heavy Brawler", tags: ["Deathfist", "Demolition Man", "i15 df2"] },
-      bryan: { name: "Bryan Fury", archetype: "Counter-Hit Keepout", tags: ["Taunt", "Jet Upper (i14)", "Hatchet"] },
-      law: { name: "Marshall Law", archetype: "Martial Artist DSS", tags: ["Dragon Stance", "Flip Kick", "Slide"] },
-      king: { name: "King", archetype: "Chain Grappler", tags: ["Giant Swing", "Muscle Armor", "i10 1,2"] },
-      hwoarang: { name: "Hwoarang", archetype: "Flamingo Rush", tags: ["Flamingo Stance", "Peacekeeper", "Skyrocket"] },
-      steve: { name: "Steve Fox", archetype: "Boxing Specialist", tags: ["Ducking", "Peekaboo", "b1 Counter"] },
-      yoshimitsu: { name: "Yoshimitsu", archetype: "Trickster Ninja", tags: ["Flash", "Flea", "Manji Spin"] },
-      nina: { name: "Nina Williams", archetype: "Assassin Rushdown", tags: ["Hayashida", "Butterfly", "i10 Punish"] },
-      lee: { name: "Lee Chaolan", archetype: "Just-Frame Master", tags: ["Acid Rain (JF)", "Mist Step", "b4 Keepout"] },
-      jun: { name: "Jun Kazama", archetype: "Kazama Traditional", tags: ["Izumo", "White Health", "Heal"] },
-      asuka: { name: "Asuka Kazama", archetype: "Defensive Counter", tags: ["Tooth Fairy", "Reversal", "Leg Cutter"] },
-      feng: { name: "Feng Wei", archetype: "Kenpo Sabaki", tags: ["Kenpo Step", "Shoulder (i13)", "db3 Poke"] },
-      lars: { name: "Lars Alexandersson", archetype: "Dynamic Infiltration", tags: ["Silent Entry", "Dynamic Entry", "Orbital"] },
-      alisa: { name: "Alisa Bosconovitch", archetype: "Chainsaw Android", tags: ["Dual Boot", "Destructive Form", "Backup"] },
-      jack8: { name: "Jack-8", archetype: "Heavy Cyborg", tags: ["Gigaton Punch", "Long Range", "Crouch Punch"] },
-      raven: { name: "Raven", archetype: "Shadow Assassin", tags: ["Shadow Clones", "Backturned", "Teleport"] },
-      leo: { name: "Leo", archetype: "Baji Quan Balanced", tags: ["Foxtrot", "Bokken", "Baji Strikes"] },
-      lili: { name: "Lili", archetype: "Acrobatic Sidestepper", tags: ["Feisty Rabbit", "Matterhorn", "Sidestep"] },
-      claudio: { name: "Claudio Serafino", archetype: "Starburst Exorcist", tags: ["Starburst", "Running 2 (i15)", "Hopkick"] },
-      shaheen: { name: "Shaheen", archetype: "Silent Eagle", tags: ["Stealth Step", "Slide", "Orbital Heel"] },
-      zafina: { name: "Zafina", archetype: "Ancient Astrologer", tags: ["Tarantula", "Scarecrow", "Azazel Arm"] },
-      leroy: { name: "Leroy Smith", archetype: "Wing Chun Master", tags: ["Hermit Stance", "Auto-Parry", "Sugar Assist"] },
-      kuma: { name: "Kuma", archetype: "Mishima Bear Bear", tags: ["Hunting Stance", "Salmon", "Fresh Fish"] },
-      panda: { name: "Panda", archetype: "Playful Bear", tags: ["Hunting Stance", "Panda Roll", "Bear Flurry"] },
-      azucena: { name: "Azucena", archetype: "Coffee Queen Dodge", tags: ["Libertador Stance", "Auto Dodge", "Running 3,2"] },
-      victor: { name: "Victor Chevalier", archetype: "Refined Cyber-Spy", tags: ["Iai Stance", "Pistol Shot", "Teleport Knife"] },
-      eddy: { name: "Eddy Gordo", archetype: "Capoeira Rythmic", tags: ["Bananeira", "Negativa", "Mandinga"] },
-      lidia: { name: "Lidia Sobieska", archetype: "Karate Prime Minister", tags: ["Cat Stance", "Heaven Stance", "Tenchi"] },
-      clive: { name: "Clive Rosfield", archetype: "Dominant of Fire", tags: ["Phoenix Shift", "Flame Blade", "Eikon Flare"] }
+    // ========================================================
+    // 1. CONFIGURATION DU MOTEUR DE PROFILS DE JEU
+    // ========================================================
+    const GAME_PROFILES = {
+      // --- TEKKEN 8 ---
+      tekken8: {
+        name: "Tekken 8",
+        publisher: "Bandai Namco",
+        filters: [
+          { id: 'all', label: 'Tous' },
+          { id: 'punish10', label: 'i10 Punish' },
+          { id: 'punish15', label: 'i14-i15 Launchers' },
+          { id: 'plus', label: 'Plus on Block (+)' },
+          { id: 'ws', label: 'While Standing' },
+          { id: 'heat', label: 'Heat Moves' }
+        ],
+        roster: {
+          kazuya: { name: "Kazuya Mishima", tags: ["Mishima Vortex", "EWGF", "i10 Flash 112"] },
+          jin: { name: "Jin Kazama", tags: ["Karate", "EWHF", "Zen Stance"] },
+          reina: { name: "Reina", tags: ["Taido", "Sentai 3", "Wind God"] },
+          devil_jin: { name: "Devil Jin", tags: ["Dark Mishima", "Laser", "Hellsweep"] },
+          heihachi: { name: "Heihachi Mishima", tags: ["OTGF", "Twin Pistons", "Iron Stance"] },
+          paul: { name: "Paul Phoenix", tags: ["Deathfist", "Demolition Man", "i15 df2"] },
+          bryan: { name: "Bryan Fury", tags: ["Taunt", "Jet Upper i14", "Hatchet"] },
+          law: { name: "Marshall Law", tags: ["Dragon Stance", "Flip Kick", "Slide"] },
+          king: { name: "King", tags: ["Giant Swing", "Muscle Armor", "i10 Punish"] },
+          hwoarang: { name: "Hwoarang", tags: ["Flamingo Rush", "Peacekeeper", "Skyrocket"] },
+          steve: { name: "Steve Fox", tags: ["Ducking", "Peekaboo", "b1 Counter"] },
+          yoshimitsu: { name: "Yoshimitsu", tags: ["Flash", "Flea", "Manji Spin"] },
+          nina: { name: "Nina Williams", tags: ["Hayashida", "Butterfly", "i10 Punish"] },
+          lee: { name: "Lee Chaolan", tags: ["Acid Rain (JF)", "Mist Step", "b4 Keepout"] },
+          claudio: { name: "Claudio Serafino", tags: ["Running 2", "Starburst", "Hopkick"] },
+          azucena: { name: "Azucena", tags: ["Libertador", "Auto-Dodge", "Running 3,2"] },
+          victor: { name: "Victor Chevalier", tags: ["Iai Stance", "Pistol", "Knife Teleport"] },
+          eddy: { name: "Eddy Gordo", tags: ["Capoeira", "Bananeira", "Negativa"] }
+        },
+        getMoves: (charKey) => getTekken8Moves(charKey),
+        parse: (cmd) => parseTekkenCommand(cmd)
+      },
+
+      // --- FATAL FURY: CITY OF THE WOLVES (CotW) ---
+      cotw: {
+        name: "Fatal Fury: City of the Wolves",
+        publisher: "SNK",
+        filters: [
+          { id: 'all', label: 'Tous' },
+          { id: 'rev', label: 'REV Arts / Blows' },
+          { id: 'brake', label: 'Brake Cancels (~AB)' },
+          { id: 'normals', label: 'Pokes & Normals' },
+          { id: 'combos', label: 'Combination Attacks' },
+          { id: 'gears', label: 'Ignition / Redline Gears' }
+        ],
+        roster: {
+          terry: { name: "Terry Bogard", tags: ["Burn Knuckle", "Buster Wolf", "Power Geyser"] },
+          rock: { name: "Rock Howard", tags: ["Raging Storm", "Shine Knuckle", "Crack Counter"] },
+          hotaru: { name: "Hotaru Futaba", tags: ["Tenshin Shou", "Hakki Shou", "Acrobat Kenpo"] },
+          tizoc: { name: "Tizoc (Griffon Mask)", tags: ["Big Fall Grip", "Justice Hurricane", "Heavy Grappler"] },
+          preecha: { name: "Preecha", tags: ["Muay Thai", "Science Burst", "Flying Knees"] },
+          vox: { name: "Vox Reaper", tags: ["Assassin Rush", "Shadow Step", "Daggers"] },
+          bjenet: { name: "B. Jenet", tags: ["Harrier Bee", "Rolling Thunder", "Tricky Mobility"] },
+          marco: { name: "Marco Rodrigues", tags: ["Kyokugen Karate", "Ko-Ou Ken", "Haoh Shokou Ken"] },
+          gato: { name: "Gato", tags: ["Shin-Ga", "Ura-Fuuga", "Hard Hitting"] },
+          billy: { name: "Billy Kane", tags: ["San-Setsu Kon", "Flame Cane", "Long Range"] },
+          mai: { name: "Mai Shiranui", tags: ["Kachousen", "Musasabi", "Shiranui Ninja"] }
+        },
+        getMoves: (charKey) => getCotwMoves(charKey),
+        parse: (cmd) => parseSnkCommand(cmd)
+      },
+
+      // --- STREET FIGHTER 6 ---
+      sf6: {
+        name: "Street Fighter 6",
+        publisher: "Capcom",
+        filters: [
+          { id: 'all', label: 'Tous' },
+          { id: 'driverush', label: 'Drive Rush Cancels' },
+          { id: 'antialler', label: 'Anti-Air / DP' },
+          { id: 'light', label: 'Light Confirms' },
+          { id: 'super', label: 'Super Arts (Lv1-3)' }
+        ],
+        roster: {
+          ryu: { name: "Ryu", tags: ["Shoto Core", "Denjin Charge", "Hashogeki"] },
+          ken: { name: "Ken Masters", tags: ["Jinrai Kick", "Dragonlash", "Corner Carry"] },
+          luke: { name: "Luke", tags: ["Flash Knuckle", "Sand Blaster", "Perfect Timing"] },
+          chunli: { name: "Chun-Li", tags: ["Serenity Stance", "Tensho Kicks", "Lighting Legs"] },
+          guile: { name: "Guile", tags: ["Sonic Boom", "Flash Kick", "Charge Master"] },
+          cammy: { name: "Cammy", tags: ["Spiral Arrow", "Cannon Spike", "Hooligan"] },
+          juri: { name: "Juri", tags: ["Fuha Stocks", "Ankensatsu", "Divekick"] },
+          akuma: { name: "Gouki / Akuma", tags: ["Demon Flip", "Raging Demon", "Air Hadoken"] }
+        },
+        getMoves: (charKey) => getSf6Moves(charKey),
+        parse: (cmd) => parseCapcomCommand(cmd)
+      }
     };
 
-    // Générateur synthétique complet et haute fidélité Tekken 8 pour le casting
-    function getMovelistForCharacter(charKey) {
-      const baseMoves = [
-        { cmd: "1,1,2", hit: "h,h,m", dmg: "25", startup: "i10", block: "-17", name: "1,1,2 Flash Punish", tags: ["punish10"] },
-        { cmd: "1,2", hit: "h,m", dmg: "17", startup: "i10", block: "-1", name: "Jab String", tags: ["punish10"] },
-        { cmd: "2,2", hit: "h,h", dmg: "22", startup: "i10", block: "-3", name: "Twin Jabs", tags: ["punish10"] },
-        { cmd: "d/f+1", hit: "m", dmg: "14", startup: "i13", block: "-1", name: "Standard Mid Poke", tags: ["plus"] },
-        { cmd: "d/f+2", hit: "m", dmg: "18", startup: "i15", block: "-12", name: "Standard Upper Launcher", tags: ["punish15"] },
-        { cmd: "u/f+4", hit: "m", dmg: "20", startup: "i15", block: "-13", name: "Hopkick Launcher", tags: ["punish15"] },
-        { cmd: "f,f,F+3", hit: "m", dmg: "30", startup: "i20", block: "+6", name: "Slash Kick / Running 3", tags: ["plus"] },
-        { cmd: "WS+1,2", hit: "m,m", dmg: "28", startup: "i13", block: "-12", name: "While Standing Twin Strike", tags: ["ws"] },
-        { cmd: "WS+2", hit: "m", dmg: "22", startup: "i15", block: "-14", name: "WS Mid Launcher", tags: ["ws", "punish15"] },
-        { cmd: "WS+4", hit: "m", dmg: "16", startup: "i11", block: "-3", name: "WS Fast Mid Check", tags: ["ws"] },
-        { cmd: "2+3", hit: "m", dmg: "55", startup: "i16", block: "+2", name: "Heat Burst / Heat Smash", tags: ["heat", "plus"] }
-      ];
+    // ========================================================
+    // 2. PARSEURS REGEX MULTI-LICENCES
+    // ========================================================
 
-      // Coups signatures selon le personnage
-      if (charKey === "kazuya" || charKey === "devil_jin" || charKey === "reina") {
-        baseMoves.unshift(
-          { cmd: "f, n, d, d/f+2", hit: "h", dmg: "25", startup: "i11", block: "+5", name: "Electric Wind God Fist (EWGF)", tags: ["punish15", "plus"] },
-          { cmd: "f, n, d, d/f+4,1", hit: "l,m", dmg: "32", startup: "i16", block: "-23", name: "Spinning Demon (Hellsweep)", tags: [] },
-          { cmd: "f,f+3", hit: "m", dmg: "24", startup: "i19", block: "+2", name: "Left Split Kick (Axe Kick)", tags: ["plus"] }
-        );
-      } else if (charKey === "bryan") {
-        baseMoves.unshift(
-          { cmd: "f, b+2", hit: "h", dmg: "23", startup: "i14", block: "-7", name: "Jet Upper Launcher", tags: ["punish15"] },
-          { cmd: "qcb+3", hit: "l", dmg: "21", startup: "i19", block: "-13", name: "Hatchet Kick", tags: ["plus"] },
-          { cmd: "b+1", hit: "m", dmg: "22", startup: "i20", block: "+4", name: "Hammer Head Strike", tags: ["plus"] }
-        );
-      } else if (charKey === "paul") {
-        baseMoves.unshift(
-          { cmd: "qcf+2", hit: "m", dmg: "54", startup: "i15", block: "-17", name: "Phoenix Smasher (Deathfist)", tags: ["punish15"] },
-          { cmd: "d+4,2:1+2", hit: "l,h,m", dmg: "42", startup: "i15", block: "-17", name: "Demolition Man (Just-Frame)", tags: [] },
-          { cmd: "b+1,2", hit: "h,m", dmg: "32", startup: "i12", block: "-8", name: "Quick Punish String", tags: ["punish10"] }
-        );
-      } else if (charKey === "steve") {
-        baseMoves.unshift(
-          { cmd: "b+1", hit: "h", dmg: "17", startup: "i11", block: "-1", name: "Quick Left Hook (CH Launcher)", tags: ["punish10"] },
-          { cmd: "df+1+2", hit: "m", dmg: "24", startup: "i14", block: "-13", name: "Sonic Fang Punish", tags: ["punish15"] }
-        );
-      } else if (charKey === "claudio") {
-        baseMoves.unshift(
-          { cmd: "f,f,F+2", hit: "m", dmg: "28", startup: "i15", block: "+7", name: "Running 2 (Superman Punch)", tags: ["plus"] }
-        );
-      }
-
-      return baseMoves;
-    }
-
-    // --- 2. Parseur Regex Tekken vers Inputs Atomiques Numpad ---
-    function parseTekkenCommandToSteps(cmd) {
+    // Parseur Tekken (3D : f, b, d, u, df, db, uf, ub, n + 1,2,3,4)
+    function parseTekkenCommand(cmd) {
       const tokens = cmd.replace(/[:>]/g, ',').split(',');
       const steps = [];
+      const dirMap = {
+        "f": "6", "b": "4", "d": "2", "u": "8",
+        "df": "3", "d/f": "3", "db": "1", "d/b": "1",
+        "uf": "9", "u/f": "9", "ub": "7", "u/b": "7",
+        "n": "5"
+      };
 
       tokens.forEach(tok => {
         let t = tok.trim();
         if (!t) return;
 
-        let dir = "5";
-        let btn = "";
-
-        // Séparation direction et bouton
         let parts = t.split('+');
         let dirStr = parts[0].trim().toLowerCase();
         let btnStr = parts.length > 1 ? parts[1].trim() : "";
 
-        // Si pas de +, analyse du bouton suffixé
         if (parts.length === 1) {
           const match = dirStr.match(/^(f|b|d|u|df|db|uf|ub|n|\d\/[fbud])(.*)$/);
           if (match && match[2]) {
@@ -701,18 +715,8 @@
           }
         }
 
-        // Mappage direction Tekken -> Numpad
-        const map = {
-          "f": "6", "b": "4", "d": "2", "u": "8",
-          "df": "3", "d/f": "3", "db": "1", "d/b": "1",
-          "uf": "9", "u/f": "9", "ub": "7", "u/b": "7",
-          "n": "5"
-        };
-
-        dir = map[dirStr] || "5";
-
-        // Mappage boutons Tekken
-        btn = btnStr.toUpperCase()
+        const dir = dirMap[dirStr] || "5";
+        const btn = btnStr.toUpperCase()
           .replace(/1/g, "LP")
           .replace(/2/g, "RP")
           .replace(/3/g, "LK")
@@ -724,28 +728,248 @@
       return steps;
     }
 
-    // --- 3. Gestion de l'État & Rendu Tableau ---
+    // Parseur SNK / City of the Wolves (2D : Numpad 236/623/214 + A, B, C, D & Brake ~AB)
+    function parseSnkCommand(cmd) {
+      const tokens = cmd.replace(/➔|->|>/g, ',').split(',');
+      const steps = [];
+
+      tokens.forEach(tok => {
+        let t = tok.trim();
+        if (!t) return;
+
+        let isBrake = t.includes('~AB') || t.includes('~ab');
+        let clean = t.replace(/~AB|~ab/gi, '');
+
+        // Décomposition des mouvements composés classiques SNK
+        if (clean.startsWith('236')) {
+          steps.push({ dir: "2", btn: "", label: "2" });
+          steps.push({ dir: "3", btn: "", label: "3" });
+          const restBtn = clean.replace('236', '').replace('+', '');
+          steps.push({ dir: "6", btn: mapSnkButtons(restBtn), label: isBrake ? "6+" + restBtn + " (BRAKE)" : "6+" + restBtn });
+          return;
+        }
+        if (clean.startsWith('623')) {
+          steps.push({ dir: "6", btn: "", label: "6" });
+          steps.push({ dir: "2", btn: "", label: "2" });
+          const restBtn = clean.replace('623', '').replace('+', '');
+          steps.push({ dir: "3", btn: mapSnkButtons(restBtn), label: isBrake ? "3+" + restBtn + " (BRAKE)" : "3+" + restBtn });
+          return;
+        }
+        if (clean.startsWith('214')) {
+          steps.push({ dir: "2", btn: "", label: "2" });
+          steps.push({ dir: "1", btn: "", label: "1" });
+          const restBtn = clean.replace('214', '').replace('+', '');
+          steps.push({ dir: "4", btn: mapSnkButtons(restBtn), label: isBrake ? "4+" + restBtn + " (BRAKE)" : "4+" + restBtn });
+          return;
+        }
+
+        // Commande simple (ex: 2B, 5C, C+D)
+        let parts = clean.split('+');
+        let dirStr = "5";
+        let btnStr = "";
+
+        if (parts.length > 1) {
+          dirStr = parts[0].replace(/\D/g, '') || "5";
+          btnStr = parts.slice(1).join('+');
+        } else {
+          const m = clean.match(/^([1-9])?([A-Da-d\+]+)$/);
+          if (m) {
+            dirStr = m[1] || "5";
+            btnStr = m[2];
+          } else {
+            dirStr = clean.replace(/\D/g, '') || "5";
+          }
+        }
+
+        steps.push({
+          dir: dirStr,
+          btn: mapSnkButtons(btnStr),
+          label: isBrake ? `${t} (BRAKE)` : t
+        });
+      });
+
+      return steps;
+    }
+
+    function mapSnkButtons(btnRaw) {
+      if (!btnRaw) return "";
+      return btnRaw.toUpperCase()
+        .replace(/A/g, "LP")
+        .replace(/B/g, "LK")
+        .replace(/C/g, "HP")
+        .replace(/D/g, "HK");
+    }
+
+    // Parseur Capcom / Street Fighter 6
+    function parseCapcomCommand(cmd) {
+      const tokens = cmd.replace(/➔|->|>/g, ',').split(',');
+      const steps = [];
+
+      tokens.forEach(tok => {
+        let t = tok.trim();
+        if (!t) return;
+
+        // Décomposition standard QCF / DP
+        if (t.toLowerCase().startsWith('qcf') || t.startsWith('236')) {
+          steps.push({ dir: "2", btn: "", label: "2" });
+          steps.push({ dir: "3", btn: "", label: "3" });
+          const b = t.replace(/qcf|236|\+/gi, '').trim().toUpperCase();
+          steps.push({ dir: "6", btn: b, label: "6+" + b });
+          return;
+        }
+        if (t.toLowerCase().startsWith('dp') || t.startsWith('623')) {
+          steps.push({ dir: "6", btn: "", label: "6" });
+          steps.push({ dir: "2", btn: "", label: "2" });
+          const b = t.replace(/dp|623|\+/gi, '').trim().toUpperCase();
+          steps.push({ dir: "3", btn: b, label: "3+" + b });
+          return;
+        }
+
+        let parts = t.split('+');
+        let dir = parts[0].replace(/\D/g, '') || "5";
+        let btn = parts.length > 1 ? parts[1].trim().toUpperCase() : "";
+        steps.push({ dir, btn, label: t });
+      });
+
+      return steps;
+    }
+
+    // ========================================================
+    // 3. BASES DE COUPS PAR JEU
+    // ========================================================
+
+    function getTekken8Moves(charKey) {
+      const common = [
+        { cmd: "1,1,2", hit: "h,h,m", dmg: "25", startup: "i10", block: "-17", name: "1,1,2 Flash Punish", tags: ["punish10"] },
+        { cmd: "1,2", hit: "h,m", dmg: "17", startup: "i10", block: "-1", name: "Jab String", tags: ["punish10"] },
+        { cmd: "d/f+1", hit: "m", dmg: "14", startup: "i13", block: "-1", name: "Standard Mid Poke", tags: ["plus"] },
+        { cmd: "d/f+2", hit: "m", dmg: "18", startup: "i15", block: "-12", name: "Standard Upper Launcher", tags: ["punish15"] },
+        { cmd: "u/f+4", hit: "m", dmg: "20", startup: "i15", block: "-13", name: "Hopkick Launcher", tags: ["punish15"] },
+        { cmd: "f,f,F+3", hit: "m", dmg: "30", startup: "i20", block: "+6", name: "Slash Kick / Running 3", tags: ["plus"] },
+        { cmd: "WS+1,2", hit: "m,m", dmg: "28", startup: "i13", block: "-12", name: "While Standing Twin Strike", tags: ["ws"] },
+        { cmd: "WS+2", hit: "m", dmg: "22", startup: "i15", block: "-14", name: "WS Mid Launcher", tags: ["ws", "punish15"] },
+        { cmd: "2+3", hit: "m", dmg: "55", startup: "i16", block: "+2", name: "Heat Burst / Heat Smash", tags: ["heat", "plus"] }
+      ];
+
+      if (charKey === "kazuya" || charKey === "devil_jin" || charKey === "reina") {
+        common.unshift(
+          { cmd: "f, n, d, d/f+2", hit: "h", dmg: "25", startup: "i11", block: "+5", name: "Electric Wind God Fist (EWGF)", tags: ["punish15", "plus"] },
+          { cmd: "f, n, d, d/f+4,1", hit: "l,m", dmg: "32", startup: "i16", block: "-23", name: "Spinning Demon (Hellsweep)", tags: [] },
+          { cmd: "f,f+3", hit: "m", dmg: "24", startup: "i19", block: "+2", name: "Left Split Axe Kick", tags: ["plus"] }
+        );
+      } else if (charKey === "paul") {
+        common.unshift(
+          { cmd: "qcf+2", hit: "m", dmg: "54", startup: "i15", block: "-17", name: "Deathfist (Phoenix Smasher)", tags: ["punish15"] },
+          { cmd: "d+4,2:1+2", hit: "l,h,m", dmg: "42", startup: "i15", block: "-17", name: "Demolition Man (Just-Frame)", tags: [] }
+        );
+      }
+      return common;
+    }
+
+    function getCotwMoves(charKey) {
+      const common = [
+        { cmd: "2A", hit: "l", dmg: "15", startup: "4f", block: "+2", name: "Crouching Light Punch", tags: ["normals"] },
+        { cmd: "2B", hit: "l", dmg: "18", startup: "5f", block: "+1", name: "Crouching Light Kick", tags: ["normals"] },
+        { cmd: "5C", hit: "m", dmg: "38", startup: "8f", block: "-3", name: "Standing Heavy Punch", tags: ["normals"] },
+        { cmd: "C+D", hit: "m", dmg: "45", startup: "14f", block: "+3", name: "REV Blow (Guard Crush Pressure)", tags: ["rev"] },
+        { cmd: "5A > 5B > 5C", hit: "h,m,m", dmg: "52", startup: "5f", block: "-6", name: "Target Combination Attack", tags: ["combos"] }
+      ];
+
+      if (charKey === "terry") {
+        common.unshift(
+          { cmd: "236A~AB", hit: "m", dmg: "35", startup: "11f", block: "+4", name: "Burn Knuckle (Brake Cancel)", tags: ["brake", "rev"] },
+          { cmd: "236C", hit: "m", dmg: "45", startup: "14f", block: "-7", name: "Heavy Burn Knuckle", tags: ["rev"] },
+          { cmd: "623A", hit: "m", dmg: "40", startup: "5f", block: "-18", name: "Rising Tackle (Anti-Air)", tags: ["normals"] },
+          { cmd: "236236A", hit: "m", dmg: "120", startup: "9f", block: "-15", name: "Buster Wolf (Ignition Gear)", tags: ["gears"] },
+          { cmd: "214214C", hit: "m", dmg: "140", startup: "11f", block: "-22", name: "Power Geyser (Redline Gear)", tags: ["gears"] }
+        );
+      } else if (charKey === "rock") {
+        common.unshift(
+          { cmd: "236A~AB", hit: "m", dmg: "30", startup: "10f", block: "+3", name: "Reppuken (Brake Cancel)", tags: ["brake"] },
+          { cmd: "623A", hit: "m", dmg: "42", startup: "5f", block: "-16", name: "Rising Storm DP", tags: ["normals"] },
+          { cmd: "236236A", hit: "m", dmg: "130", startup: "8f", block: "-12", name: "Raging Storm (Gear)", tags: ["gears"] }
+        );
+      } else if (charKey === "tizoc") {
+        common.unshift(
+          { cmd: "41236C", hit: "throw", dmg: "65", startup: "4f", block: "Unblockable", name: "Big Fall Grip", tags: ["rev"] },
+          { cmd: "623B", hit: "m", dmg: "48", startup: "12f", block: "-8", name: "Poseidon Wave", tags: ["normals"] }
+        );
+      }
+      return common;
+    }
+
+    function getSf6Moves(charKey) {
+      return [
+        { cmd: "2LP > 2LP > 2LP", hit: "l,l,l", dmg: "30", startup: "4f", block: "+1", name: "Triple Light Confirm", tags: ["light"] },
+        { cmd: "2MK > 66", hit: "l,m", dmg: "20", startup: "7f", block: "+4", name: "Crouching MK Drive Rush Cancel", tags: ["driverush"] },
+        { cmd: "623HP", hit: "m", dmg: "50", startup: "5f", block: "-23", name: "Shoryuken Anti-Air", tags: ["antialler"] },
+        { cmd: "236236P", hit: "m", dmg: "120", startup: "9f", block: "-18", name: "Level 3 Super Art", tags: ["super"] }
+      ];
+    }
+
+    // ========================================================
+    // 4. GESTION DE L'ÉTAT & CYCLE DE VIE
+    // ========================================================
+    let currentProfileKey = 'tekken8';
     let currentCharacter = 'kazuya';
     let currentFilter = 'all';
     let activeMoves = [];
     let selectedIndices = new Set();
 
+    function switchGame(gameKey) {
+      currentProfileKey = gameKey;
+      document.querySelectorAll('.game-tab-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.getAttribute('data-game') === gameKey);
+      });
+
+      const profile = GAME_PROFILES[gameKey];
+
+      // Remplir la liste des personnages
+      const select = document.getElementById('char-select');
+      select.innerHTML = '';
+      const rosterKeys = Object.keys(profile.roster);
+
+      rosterKeys.forEach(k => {
+        const opt = document.createElement('option');
+        opt.value = k;
+        opt.textContent = profile.roster[k].name;
+        select.appendChild(opt);
+      });
+
+      document.getElementById('roster-count').textContent = `${rosterKeys.length} Persos`;
+
+      // Remplir les filtres spécifiques
+      const pillsContainer = document.getElementById('filter-pills-container');
+      pillsContainer.innerHTML = '';
+      profile.filters.forEach((f, idx) => {
+        const b = document.createElement('button');
+        b.className = `pill-btn ${idx === 0 ? 'active' : ''}`;
+        b.textContent = f.label;
+        b.onclick = () => setFilter(f.id, b);
+        pillsContainer.appendChild(b);
+      });
+
+      currentFilter = 'all';
+      onSelectCharacter(rosterKeys[0]);
+    }
+
     function onSelectCharacter(key) {
       currentCharacter = key;
-      const meta = ROSTER_METADATA[key] || { name: key, archetype: "Tekken Fighter", tags: [] };
-      
-      document.getElementById('char-name').textContent = meta.name;
-      document.getElementById('char-badges').innerHTML = meta.tags.map(t => `<span class="char-badge">${t}</span>`).join('');
+      const profile = GAME_PROFILES[currentProfileKey];
+      const charMeta = profile.roster[key] || { name: key, tags: [] };
 
-      activeMoves = getMovelistForCharacter(key);
-      document.getElementById('char-stats').textContent = `${activeMoves.length} coups analysés prêts à être exportés.`;
-      
+      document.getElementById('char-name').textContent = charMeta.name;
+      document.getElementById('char-badges').innerHTML = charMeta.tags.map(t => `<span class="char-badge">${t}</span>`).join('');
+
+      activeMoves = profile.getMoves(key);
+      document.getElementById('char-stats').textContent = `${activeMoves.length} coups analysés et prêts.`;
+
       selectedIndices.clear();
       renderTable();
     }
 
-    function setFilter(filter, el) {
-      currentFilter = filter;
+    function setFilter(filterId, el) {
+      currentFilter = filterId;
       document.querySelectorAll('.pill-btn').forEach(b => b.classList.remove('active'));
       el.classList.add('active');
       renderTable();
@@ -756,20 +980,21 @@
       const tbody = document.getElementById('moves-tbody');
       tbody.innerHTML = '';
 
+      const profile = GAME_PROFILES[currentProfileKey];
       let count = 0;
+
       activeMoves.forEach((move, idx) => {
-        // Filtrage
         if (currentFilter !== 'all' && (!move.tags || !move.tags.includes(currentFilter))) return;
         if (search && !move.cmd.toLowerCase().includes(search) && !move.name.toLowerCase().includes(search)) return;
 
         count++;
-        const steps = parseTekkenCommandToSteps(move.cmd);
+        const steps = profile.parse(move.cmd);
         const isChecked = selectedIndices.has(idx);
 
-        // Badge niveau d'impact
         let hitClass = 'hit-m';
         if (move.hit.includes('h')) hitClass = 'hit-h';
         if (move.hit.includes('l')) hitClass = 'hit-l';
+        if (move.tags && (move.tags.includes('rev') || move.tags.includes('brake'))) hitClass = 'hit-ex';
 
         const tr = document.createElement('tr');
         tr.innerHTML = `
@@ -809,26 +1034,29 @@
       renderTable();
     }
 
-    // --- 4. Pipeline d'Exportation JSON & Lab ---
+    // ========================================================
+    // 5. EXPORTATION & PASSERELLE LAB
+    // ========================================================
     function buildExportJSON() {
       const items = [];
-      const charMeta = ROSTER_METADATA[currentCharacter];
+      const profile = GAME_PROFILES[currentProfileKey];
+      const charMeta = profile.roster[currentCharacter];
 
       selectedIndices.forEach(idx => {
         const m = activeMoves[idx];
         if (!m) return;
 
-        const steps = parseTekkenCommandToSteps(m.cmd);
+        const steps = profile.parse(m.cmd);
         let diff = "normal";
         let timing = 240;
 
-        if (m.startup === "i10" || m.startup === "i11") { diff = "strict"; timing = 160; }
-        if (m.name.includes("EWGF") || m.name.includes("Just-Frame")) { diff = "justframe"; timing = 120; }
+        if (m.startup === "i10" || m.startup === "4f" || m.startup === "5f") { diff = "strict"; timing = 160; }
+        if (m.name.includes("EWGF") || m.name.includes("Brake") || m.name.includes("Just-Frame")) { diff = "justframe"; timing = 120; }
 
         items.push({
-          id: `t8_${currentCharacter}_${idx}_${Date.now()}`,
+          id: `${currentProfileKey}_${currentCharacter}_${idx}_${Date.now()}`,
           title: `${charMeta.name} - ${m.name} (${m.cmd})`,
-          char: charMeta.name,
+          char: `${charMeta.name} (${profile.name})`,
           diff: diff,
           timingMs: timing,
           inputs: steps
@@ -865,25 +1093,21 @@
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `fightflow-t8-${currentCharacter}-pack.json`;
+      a.download = `fightflow-${currentProfileKey}-${currentCharacter}-pack.json`;
       a.click();
     }
 
     function launchInLab() {
       const data = buildExportJSON();
-      if (!data || data.length === 0) {
-        alert("Aucun coup sélectionné.");
-        return;
-      }
+      if (!data || data.length === 0) return;
 
-      // Méthode 1 : Partage local via localStorage (ultra-rapide, sans limite de taille)
+      // Transfert local sécurisé par localStorage
       try {
         localStorage.setItem('fightflow_pending_import', JSON.stringify(data));
         window.open('../lab/index.html?from=studio', '_blank');
       } catch (e) {
-        // Méthode 2 : Repli sur le fragment d'URL si le stockage local est restreint
-        const jsonStr = JSON.stringify(data);
-        const encoded = encodeURIComponent(jsonStr);
+        // Repli par fragment URL
+        const encoded = encodeURIComponent(JSON.stringify(data));
         window.open(`../lab/index.html#combo=${encoded}`, '_blank');
       }
     }
@@ -897,7 +1121,7 @@
         dmg: "Custom",
         startup: "i15",
         block: "-5",
-        name: "Coup Custom Utilisateur",
+        name: "Coup Saisi Manuel",
         tags: []
       });
       selectedIndices.add(0);
@@ -905,8 +1129,8 @@
       renderTable();
     }
 
-    // Initialisation
-    onSelectCharacter('kazuya');
+    // Initialisation au chargement
+    switchGame('tekken8');
   </script>
 </body>
 </html>
