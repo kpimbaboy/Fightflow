@@ -164,6 +164,21 @@
             </select>
           </div>
 
+          <!-- Module Métronome Intégré -->
+                    <div class="flex flex-col">
+                      <div class="flex items-center justify-between">
+                        <label class="block text-[10px] text-cyan-400 uppercase font-semibold">Métronome</label>
+                        <span id="metronome-bpm-val" class="text-[10px] font-mono text-cyan-300 font-bold">120 BPM</span>
+                      </div>
+                      <div class="flex items-center gap-2 mt-1">
+                        <button id="toggle-metronome-btn" type="button" class="px-2.5 py-1 rounded-lg bg-slate-950 border border-slate-700 hover:border-cyan-400 text-xs text-slate-300 hover:text-white transition flex items-center gap-1 font-semibold">
+                          <i data-lucide="play" id="metro-play-icon" class="w-3.5 h-3.5 text-cyan-400"></i>
+                          <span id="metro-btn-label">Start</span>
+                        </button>
+                        <input id="metronome-slider" type="range" min="60" max="200" value="120" step="5" class="w-20 accent-cyan-400 h-1 bg-slate-800 rounded-lg cursor-pointer">
+                      </div>
+                    </div>
+
           <!-- Inversion P1 / P2 -->
           <div class="flex items-end">
             <button id="toggle-mirror-btn" class="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-semibold text-slate-200 flex items-center space-x-1.5 transition" title="Inverser gauche/droite (Côté P1 / Côté P2)">
@@ -793,6 +808,14 @@
         this.play(380, 'square', 0.08, 0.12);
         setTimeout(() => this.play(300, 'square', 0.1, 0.12), 50);
       }
+
+      // Son sec de métronome (haut/bas)
+            metroTick(isDownbeat = false) {
+              if (!this.enabled) return;
+              this.init();
+              const freq = isDownbeat ? 1200 : 800;
+              this.play(freq, 'sine', 0.03, 0.18);
+            }
     }
     const sound = new SoundEngine();
 
@@ -820,6 +843,61 @@
     let totalDirtyInputs = 0;
     let currentStreak = 0;
     let executionTimes = [];
+
+    // --- GESTION DU MÉTRONOME ---
+        let metronomeTimer = null;
+        let isMetronomeRunning = false;
+        let metronomeBeat = 0;
+
+        const metroBtn = document.getElementById('toggle-metronome-btn');
+        const metroSlider = document.getElementById('metronome-slider');
+        const metroBpmVal = document.getElementById('metronome-bpm-val');
+        const metroIcon = document.getElementById('metro-play-icon');
+        const metroLabel = document.getElementById('metro-btn-label');
+
+        function startMetronome() {
+          sound.unlock();
+          const bpm = parseInt(metroSlider.value, 10) || 120;
+          const intervalMs = (60 / bpm) * 1000;
+          metronomeBeat = 0;
+
+          metronomeTimer = setInterval(() => {
+            sound.metroTick(metronomeBeat % 4 === 0);
+            metronomeBeat++;
+          }, intervalMs);
+
+          isMetronomeRunning = true;
+          metroBtn.classList.add('bg-cyan-950', 'border-cyan-500', 'text-cyan-300');
+          metroLabel.textContent = "Stop";
+          if (metroIcon) metroIcon.setAttribute('data-lucide', 'square');
+          lucide.createIcons();
+        }
+
+        function stopMetronome() {
+          if (metronomeTimer) clearInterval(metronomeTimer);
+          metronomeTimer = null;
+          isMetronomeRunning = false;
+          metroBtn.classList.remove('bg-cyan-950', 'border-cyan-500', 'text-cyan-300');
+          metroLabel.textContent = "Start";
+          if (metroIcon) metroIcon.setAttribute('data-lucide', 'play');
+          lucide.createIcons();
+        }
+
+        if (metroBtn && metroSlider) {
+          metroBtn.addEventListener('click', () => {
+            if (isMetronomeRunning) stopMetronome();
+            else startMetronome();
+          });
+
+          metroSlider.addEventListener('input', (e) => {
+            const bpm = e.target.value;
+            metroBpmVal.textContent = `${bpm} BPM`;
+            if (isMetronomeRunning) {
+              stopMetronome();
+              startMetronome();
+            }
+          });
+        }
 
     // Mapping Clavier Robuste (Tolérant AZERTY & QWERTY)
     const keyActions = {
