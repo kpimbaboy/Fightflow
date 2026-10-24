@@ -1,1267 +1,899 @@
 <!DOCTYPE html>
-<html lang="fr" class="dark">
+<html lang="fr">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>FightFlow Data Studio - Convertisseur & Pipeline FGC</title>
-  
-  <!-- Tailwind CSS & Lucide Icons -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://unpkg.com/lucide@latest"></script>
-  
-  <!-- Google Fonts: Inter & Chakra Petch / JetBrains Mono -->
+  <title>FightFlow Data Studio • Tekken 8 Full Roster & FGC Normalizer</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:ital,wght@0,400;0,600;0,700;1,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
-  
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700;800&family=Space+Grotesk:wght@600;700;900&display=swap" rel="stylesheet">
   <style>
-    body {
-      font-family: 'Inter', sans-serif;
-      background-color: #08090d;
-      color: #e2e8f0;
-      user-select: none;
+    :root {
+      --bg: #07090e;
+      --panel: #0f131c;
+      --card: #151a26;
+      --card-hover: #1b2232;
+      --border: #212838;
+      --border-bright: #36425d;
+      --accent-studio: #00e5ff;
+      --accent-studio-glow: rgba(0, 229, 255, 0.25);
+      --accent-t8: #ff2a5f;
+      --accent-t8-glow: rgba(255, 42, 95, 0.25);
+      --accent-gold: #ffb800;
+      --text: #f0f4fc;
+      --subtext: #8e9db7;
+      --font-display: "Space Grotesk", sans-serif;
+      --font-mono: "JetBrains Mono", monospace;
     }
-    .font-arcade { font-family: 'Chakra Petch', sans-serif; }
-    .font-code { font-family: 'JetBrains Mono', monospace; }
 
-    /* Custom Scrollbars */
-    ::-webkit-scrollbar { width: 6px; height: 6px; }
-    ::-webkit-scrollbar-track { background: #0b0d14; }
-    ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 3px; }
-    ::-webkit-scrollbar-thumb:hover { background: #334155; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
 
-    /* Glow Tokens */
-    .glow-cyan { box-shadow: 0 0 15px rgba(6, 182, 212, 0.35); }
-    .glow-violet { box-shadow: 0 0 15px rgba(168, 85, 247, 0.35); }
-    .border-glow-cyan { border-color: rgba(6, 182, 212, 0.5); box-shadow: 0 0 10px rgba(6, 182, 212, 0.2); }
-    
-    /* Code highlight styling */
-    .json-key { color: #38bdf8; }
-    .json-string { color: #4ade80; }
-    .json-number { color: #f59e0b; }
-    .json-boolean { color: #c084fc; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-display);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header.top-nav {
+      background: rgba(15, 19, 28, 0.95);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      padding: 14px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 1.15rem;
+      font-weight: 900;
+      letter-spacing: -0.5px;
+    }
+
+    .brand-tag {
+      background: linear-gradient(135deg, var(--accent-studio), #0077ff);
+      color: #000;
+      padding: 3px 8px;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 900;
+      font-family: var(--font-mono);
+    }
+
+    .nav-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .btn-link {
+      color: var(--subtext);
+      text-decoration: none;
+      font-size: 0.85rem;
+      font-family: var(--font-mono);
+      padding: 6px 12px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      transition: all 0.2s ease;
+    }
+    .btn-link:hover { color: #fff; border-color: var(--border-bright); }
+
+    .main-layout {
+      max-width: 1400px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 24px;
+      display: grid;
+      grid-template-columns: 340px 1fr;
+      gap: 24px;
+      flex: 1;
+    }
+
+    @media (max-width: 1024px) {
+      .main-layout { grid-template-columns: 1fr; }
+    }
+
+    /* Panneau Latéral : Sélecteur Roster & Source */
+    .sidebar {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .panel-box {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+    }
+
+    .panel-box h3 {
+      font-size: 0.95rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--accent-studio);
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .roster-select {
+      width: 100%;
+      background: var(--card);
+      border: 1px solid var(--border-bright);
+      color: #fff;
+      padding: 10px 12px;
+      border-radius: 8px;
+      font-family: var(--font-display);
+      font-size: 0.95rem;
+      font-weight: 700;
+      margin-bottom: 12px;
+      outline: none;
+      cursor: pointer;
+    }
+    .roster-select optgroup { background: #0c0f17; color: var(--subtext); }
+    .roster-select option { background: var(--card); color: #fff; }
+
+    .char-profile-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+    }
+
+    .char-profile-name {
+      font-size: 1.1rem;
+      font-weight: 900;
+      font-family: var(--font-display);
+      color: #fff;
+    }
+
+    .char-badge-row {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .char-badge {
+      background: rgba(255, 42, 95, 0.15);
+      color: var(--accent-t8);
+      border: 1px solid rgba(255, 42, 95, 0.3);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 0.7rem;
+      font-weight: 700;
+    }
+
+    /* Filtres Movelist */
+    .filter-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: 14px;
+    }
+
+    .filter-title {
+      font-size: 0.75rem;
+      color: var(--subtext);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      font-family: var(--font-mono);
+    }
+
+    .filter-pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .pill-btn {
+      background: var(--card);
+      border: 1px solid var(--border);
+      color: var(--subtext);
+      padding: 5px 10px;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-family: var(--font-mono);
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .pill-btn:hover { border-color: var(--border-bright); color: #fff; }
+    .pill-btn.active {
+      background: rgba(0, 229, 255, 0.12);
+      border-color: var(--accent-studio);
+      color: var(--accent-studio);
+      font-weight: 700;
+    }
+
+    /* Zone Centrale : Tableau des Coups */
+    .content-area {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .table-container {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .table-toolbar {
+      padding: 14px 20px;
+      background: #111622;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .search-box {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 8px 12px;
+      color: #fff;
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      width: 260px;
+      outline: none;
+    }
+    .search-box:focus { border-color: var(--accent-studio); }
+
+    .batch-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn-action {
+      background: #1b2232;
+      border: 1px solid var(--border-bright);
+      color: #fff;
+      padding: 7px 14px;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      font-family: var(--font-mono);
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .btn-action:hover { background: #242e44; }
+
+    .btn-action.primary {
+      background: var(--accent-studio);
+      color: #000;
+      border-color: var(--accent-studio);
+      font-weight: 800;
+    }
+    .btn-action.primary:hover { filter: brightness(1.1); }
+
+    .moves-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+      text-align: left;
+    }
+
+    .moves-table th {
+      background: #0d1017;
+      color: var(--subtext);
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      padding: 10px 16px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .moves-table td {
+      padding: 12px 16px;
+      border-bottom: 1px solid rgba(33, 40, 56, 0.6);
+      vertical-align: middle;
+    }
+
+    .moves-table tr:hover { background: var(--card-hover); }
+
+    .cmd-text {
+      font-family: var(--font-mono);
+      font-weight: 700;
+      color: #fff;
+      font-size: 0.95rem;
+    }
+
+    .numpad-steps {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      margin-top: 4px;
+    }
+
+    .step-chip {
+      background: #090c12;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 2px 6px;
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      color: var(--accent-gold);
+      font-weight: 700;
+    }
+
+    .badge-hit {
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+    .hit-h { background: rgba(0, 229, 255, 0.15); color: var(--accent-studio); border: 1px solid rgba(0, 229, 255, 0.3); }
+    .hit-m { background: rgba(255, 184, 0, 0.15); color: var(--accent-gold); border: 1px solid rgba(255, 184, 0, 0.3); }
+    .hit-l { background: rgba(255, 42, 95, 0.15); color: var(--accent-t8); border: 1px solid rgba(255, 42, 95, 0.3); }
+    .hit-sm, .hit-sp { background: #262e40; color: #cbd5e1; }
+
+    /* Modal Export JSON */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.85);
+      backdrop-filter: blur(8px);
+      z-index: 100;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .modal-overlay.active { display: flex; }
+
+    .modal-window {
+      background: var(--panel);
+      border: 1px solid var(--border-bright);
+      border-radius: 12px;
+      max-width: 800px;
+      width: 100%;
+      max-height: 85vh;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8);
+    }
+
+    .modal-header {
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .modal-body {
+      padding: 20px;
+      overflow-y: auto;
+      flex: 1;
+    }
+
+    .json-code {
+      width: 100%;
+      height: 320px;
+      background: #080a0f;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 14px;
+      color: var(--accent-studio);
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      resize: none;
+      outline: none;
+      white-space: pre;
+    }
+
+    .modal-footer {
+      padding: 14px 20px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #111622;
+    }
   </style>
 </head>
-<body class="min-h-screen flex flex-col selection:bg-cyan-500 selection:text-black">
+<body>
 
-  <!-- ======================================================== -->
-  <!-- HEADER & HUB NAVIGATION                                  -->
-  <!-- ======================================================== -->
-  <header class="border-b border-slate-800/80 bg-slate-950/90 backdrop-blur sticky top-0 z-40 px-4 sm:px-6 py-2.5 flex items-center justify-between">
-    <div class="flex items-center space-x-3.5">
-      <div class="h-10 w-10 rounded-xl bg-gradient-to-tr from-cyan-600 via-indigo-600 to-fuchsia-600 flex items-center justify-center font-arcade font-bold text-xl text-white shadow-lg shadow-cyan-500/20 border border-cyan-400/30">
-        FS
-      </div>
-      <div>
-        <div class="flex items-center gap-2">
-          <h1 class="font-arcade text-lg sm:text-xl font-bold tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-indigo-300 to-fuchsia-400">
-            FIGHTFLOW DATA STUDIO
-          </h1>
-          <span class="text-[10px] px-2 py-0.5 rounded font-mono font-bold bg-cyan-950/80 border border-cyan-500/40 text-cyan-300 uppercase">
-            PIPELINE v1.0
-          </span>
-        </div>
-        <p class="text-[11px] text-slate-400 font-medium hidden sm:block">
-          Ingestion, Normalisation Regex 2D/3D & Exporteur de Combos vers FightFlow Lab
-        </p>
-      </div>
+  <!-- Barre Supérieure -->
+  <header class="top-nav">
+    <div class="brand">
+      <span>FIGHTFLOW</span>
+      <span class="brand-tag">DATA STUDIO</span>
     </div>
-
-    <!-- Right Quick Actions -->
-    <div class="flex items-center space-x-2.5 text-xs">
-      <button id="toggle-doc-btn" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700/80 text-slate-300 hover:text-cyan-400 transition">
-        <i data-lucide="book-open" class="w-4 h-4 text-cyan-400"></i>
-        <span class="font-medium hidden md:inline">Spécifications & Guide</span>
-      </button>
-
-      <a href="https://github.com" target="_blank" rel="noopener noreferrer" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700/80 text-slate-300 hover:text-white transition">
-        <i data-lucide="github" class="w-4 h-4"></i>
-        <span class="font-medium hidden sm:inline">GitHub</span>
-      </a>
+    <div class="nav-actions">
+      <a href="../lab/index.html" class="btn-link">⚡ Aller au Lab</a>
+      <a href="../index.html" class="btn-link">Accueil Hub</a>
     </div>
   </header>
 
-  <!-- ======================================================== -->
-  <!-- MAIN WORKSPACE : 3-PANE LAYOUT                           -->
-  <!-- ======================================================== -->
-  <main class="flex-1 max-w-[1600px] w-full mx-auto p-3 sm:p-5 grid grid-cols-1 xl:grid-cols-12 gap-5">
-
-    <!-- ---------------------------------------------------- -->
-    <!-- PANE 1: SOURCE INGESTION & PARSER (4 Cols)           -->
-    <!-- ---------------------------------------------------- -->
-    <section class="xl:col-span-4 flex flex-col space-y-4">
+  <div class="main-layout">
+    
+    <!-- Panneau Gauche : Sélection Combattant & Filtres -->
+    <aside class="sidebar">
       
-      <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 sm:p-5 shadow-xl flex flex-col">
-        <div class="flex items-center justify-between pb-3 border-b border-slate-800">
-          <div class="flex items-center gap-2">
-            <i data-lucide="database-zap" class="w-4 h-4 text-cyan-400"></i>
-            <h2 class="font-arcade text-sm font-bold tracking-wider text-slate-200 uppercase">1. Ingestion de Données</h2>
+      <div class="panel-box">
+        <h3>
+          <span>Combattant T8</span>
+          <span style="font-size: 0.75rem; color: var(--accent-t8);" id="roster-count">35 Persos</span>
+        </h3>
+        
+        <select id="char-select" class="roster-select" onchange="onSelectCharacter(this.value)">
+          <optgroup label="── Famille Mishima ──">
+            <option value="kazuya">Kazuya Mishima</option>
+            <option value="jin">Jin Kazama</option>
+            <option value="reina">Reina</option>
+            <option value="devil_jin">Devil Jin</option>
+            <option value="heihachi">Heihachi Mishima (DLC)</option>
+          </optgroup>
+          <optgroup label="── Vétérans & Icônes ──">
+            <option value="paul">Paul Phoenix</option>
+            <option value="bryan">Bryan Fury</option>
+            <option value="law">Marshall Law</option>
+            <option value="king">King</option>
+            <option value="hwoarang">Hwoarang</option>
+            <option value="steve">Steve Fox</option>
+            <option value="yoshimitsu">Yoshimitsu</option>
+            <option value="nina">Nina Williams</option>
+            <option value="lee">Lee Chaolan</option>
+            <option value="jun">Jun Kazama</option>
+            <option value="asuka">Asuka Kazama</option>
+            <option value="feng">Feng Wei</option>
+            <option value="lars">Lars Alexandersson</option>
+            <option value="alisa">Alisa Bosconovitch</option>
+            <option value="jack8">Jack-8</option>
+            <option value="raven">Raven</option>
+            <option value="leo">Leo</option>
+            <option value="lili">Lili</option>
+            <option value="claudio">Claudio Serafino</option>
+            <option value="shaheen">Shaheen</option>
+            <option value="zafina">Zafina</option>
+            <option value="leroy">Leroy Smith</option>
+            <option value="kuma">Kuma</option>
+            <option value="panda">Panda</option>
+          </optgroup>
+          <optgroup label="── Nouveaux T8 & DLCs ──">
+            <option value="azucena">Azucena</option>
+            <option value="victor">Victor Chevalier</option>
+            <option value="eddy">Eddy Gordo (DLC)</option>
+            <option value="lidia">Lidia Sobieska (DLC)</option>
+            <option value="clive">Clive Rosfield (Guest)</option>
+          </optgroup>
+        </select>
+
+        <div class="char-profile-card" id="char-profile">
+          <div class="char-profile-name" id="char-name">Kazuya Mishima</div>
+          <div class="char-badge-row" id="char-badges">
+            <span class="char-badge">Mishima Style</span>
+            <span class="char-badge">EWGF Core</span>
+            <span class="char-badge">50/50 Vortex</span>
           </div>
-          <span class="text-[10px] text-slate-500 font-mono">SOURCE_SELECT</span>
+          <div style="color: var(--subtext); margin-top: 6px;" id="char-stats">
+            Chargement de la movelist...
+          </div>
         </div>
 
-        <!-- Mode Tabs -->
-        <div class="grid grid-cols-3 gap-1 bg-slate-950 p-1 rounded-xl mt-4 border border-slate-800 text-xs font-medium">
-          <button id="tab-api-btn" class="py-1.5 px-2 rounded-lg bg-cyan-600 text-white font-semibold flex items-center justify-center gap-1 transition">
-            <i data-lucide="globe" class="w-3.5 h-3.5"></i> API Tekken
-          </button>
-          <button id="tab-raw-btn" class="py-1.5 px-2 rounded-lg text-slate-400 hover:text-white flex items-center justify-center gap-1 transition">
-            <i data-lucide="file-text" class="w-3.5 h-3.5"></i> Quick-Parse
-          </button>
-          <button id="tab-csv-btn" class="py-1.5 px-2 rounded-lg text-slate-400 hover:text-white flex items-center justify-center gap-1 transition">
-            <i data-lucide="table" class="w-3.5 h-3.5"></i> Tableur / CSV
-          </button>
-        </div>
-
-        <!-- TAB CONTENT: TEKKEN DOCS API -->
-        <div id="tab-content-api" class="mt-4 space-y-3.5">
-          <div class="p-3 bg-slate-950/70 border border-slate-800 rounded-xl space-y-3">
-            <div>
-              <label class="block text-[11px] font-mono text-slate-400 mb-1">PERSONNAGE TEKKEN 8 / 7 :</label>
-              <select id="tekken-char-select" class="w-full bg-slate-900 border border-slate-700 text-slate-200 text-xs font-semibold rounded-lg px-2.5 py-2 focus:border-cyan-400 outline-none">
-                <option value="kazuya">Kazuya Mishima (EWGF, Wavedash, Hellsweep)</option>
-                <option value="jin">Jin Kazama (EWHF, Zen Cancels, d2)</option>
-                <option value="reina">Reina (Sentai, Wind God Step, Taidou)</option>
-                <option value="paul">Paul Phoenix (Deathfist, Demolition Man)</option>
-                <option value="bryan">Bryan Fury (Taunt Jet Upper, Hatchet Kick)</option>
-              </select>
-            </div>
-
-            <div class="space-y-1">
-              <label class="block text-[11px] font-mono text-slate-400">PROXY CORS API (OPTIONNEL) :</label>
-              <input id="api-proxy-url" type="text" value="https://corsproxy.io/?" placeholder="Laisser vide pour mode direct/mock" class="w-full bg-slate-900 border border-slate-700 text-slate-300 text-xs font-mono rounded-lg px-2.5 py-1.5 outline-none focus:border-cyan-400">
-              <p class="text-[10px] text-slate-500">Bascule automatiquement sur le mock certifié si le réseau est inaccessible.</p>
-            </div>
-
-            <div class="pt-1 flex gap-2">
-              <button id="fetch-tekken-btn" class="flex-1 py-2 px-3 rounded-lg bg-gradient-to-r from-cyan-600 to-indigo-600 hover:from-cyan-500 hover:to-indigo-500 text-white font-arcade font-bold text-xs tracking-wider transition flex items-center justify-center gap-1.5 shadow-md shadow-cyan-600/20">
-                <i data-lucide="download-cloud" class="w-4 h-4"></i> CHARGER DEPUIS TEKKENDOCS
-              </button>
-            </div>
+        <!-- Filtres Avancés de Coups -->
+        <div class="filter-group">
+          <div class="filter-title">Catégories d'Entraînement</div>
+          <div class="filter-pills">
+            <button class="pill-btn active" onclick="setFilter('all', this)">Tous</button>
+            <button class="pill-btn" onclick="setFilter('punish10', this)">i10 Punish</button>
+            <button class="pill-btn" onclick="setFilter('punish15', this)">i14-i15 Launchers</button>
+            <button class="pill-btn" onclick="setFilter('plus', this)">Plus on Block (+)</button>
+            <button class="pill-btn" onclick="setFilter('heat', this)">Heat Moves</button>
+            <button class="pill-btn" onclick="setFilter('ws', this)">While Standing</button>
           </div>
         </div>
 
-        <!-- TAB CONTENT: RAW TEXT QUICK-PARSE -->
-        <div id="tab-content-raw" class="mt-4 space-y-3 hidden">
-          <div class="space-y-1.5">
-            <div class="flex justify-between items-center text-[11px] font-mono text-slate-400">
-              <span>SAISIE NOTATION BRUTE :</span>
-              <span class="text-cyan-400 font-normal">Tekken ou 2D Universel</span>
-            </div>
-            <textarea id="raw-input-text" rows="5" placeholder="Exemples autorisés :&#10;f, n, d, df+2 > b+1,2&#10;236P > 623HP > 236236K&#10;qcf+LP > cr.HP > hcb+HK" class="w-full bg-slate-950 border border-slate-700/80 rounded-xl p-3 text-xs font-mono text-cyan-300 placeholder:text-slate-600 focus:border-cyan-400 outline-none leading-relaxed"></textarea>
-          </div>
-
-          <div class="grid grid-cols-2 gap-2">
-            <div>
-              <label class="block text-[10px] font-mono text-slate-400 mb-0.5">NOM DU COMBO :</label>
-              <input id="raw-combo-title" type="text" value="Route Personnalisée" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 outline-none focus:border-cyan-400">
-            </div>
-            <div>
-              <label class="block text-[10px] font-mono text-slate-400 mb-0.5">STARTUP (FRAMES) :</label>
-              <input id="raw-combo-startup" type="text" value="i14" placeholder="ex: i10, i15" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 outline-none focus:border-cyan-400">
-            </div>
-          </div>
-
-          <button id="parse-raw-btn" class="w-full py-2 px-3 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white font-arcade font-bold text-xs tracking-wider transition flex items-center justify-center gap-1.5">
-            <i data-lucide="cpu" class="w-4 h-4"></i> PARSER & AJOUTER AU LOT
-          </button>
-        </div>
-
-        <!-- TAB CONTENT: CSV / SPREADSHEET IMPORT -->
-        <div id="tab-content-csv" class="mt-4 space-y-3 hidden">
-          <div id="drop-zone" class="border-2 border-dashed border-slate-700 hover:border-cyan-400 rounded-xl p-5 text-center transition cursor-pointer bg-slate-950/60">
-            <i data-lucide="upload" class="w-8 h-8 mx-auto text-slate-500 mb-2"></i>
-            <p class="text-xs font-semibold text-slate-300">Glissez-déposez un fichier .CSV de Frame Data</p>
-            <p class="text-[10px] text-slate-500 mt-1">ou cliquez pour sélectionner un fichier local</p>
-            <input id="csv-file-input" type="file" accept=".csv,.txt" class="hidden">
-          </div>
-          <div class="space-y-1">
-            <label class="block text-[10px] font-mono text-slate-400">OU COLLER DIRECTEMENT DU CSV (TAB / VIRGULE) :</label>
-            <textarea id="csv-raw-textarea" rows="4" placeholder="Command,Damage,Startup,Block&#10;f,n,d,df+2,20,i14,+5&#10;b+1,2,24,i15,-12" class="w-full bg-slate-950 border border-slate-700/80 rounded-xl p-2.5 text-xs font-mono text-slate-300 placeholder:text-slate-600 focus:border-cyan-400 outline-none"></textarea>
-          </div>
-          <button id="parse-csv-btn" class="w-full py-2 px-3 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white font-arcade font-bold text-xs tracking-wider transition flex items-center justify-center gap-1.5">
-            <i data-lucide="file-spreadsheet" class="w-4 h-4"></i> ANALYSER LE TABLEUR CSV
-          </button>
-        </div>
-
-        <!-- Moteur de détection dynamique status -->
-        <div class="mt-4 pt-3 border-t border-slate-800 flex items-center justify-between text-[11px] font-mono text-slate-400">
-          <span>PARSER STATUS :</span>
-          <span id="parser-status" class="text-emerald-400 font-semibold flex items-center gap-1">
-            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> PRÊT
-          </span>
-        </div>
       </div>
 
-      <!-- Quick Tips Box -->
-      <div class="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-4 text-xs text-slate-400 space-y-2">
-        <div class="font-arcade text-slate-200 font-bold flex items-center gap-1.5">
-          <i data-lucide="lightbulb" class="w-3.5 h-3.5 text-amber-400"></i>
-          RÈGLES DU PARSER AUTOMATIQUE
-        </div>
-        <p class="text-[11px] leading-relaxed">
-          - <strong>Tekken 3D</strong> : Convertit <code class="text-cyan-300">f,b,d,u,df,db,uf,ub,n</code> en pavé numérique (<code class="text-cyan-300">6,4,2,8,3,1,9,7,5</code>).
-        </p>
-        <p class="text-[11px] leading-relaxed">
-          - <strong>Boutons</strong> : <code class="text-cyan-300">1,2,3,4</code> ➔ <code class="text-cyan-300">LP, RP, LK, RK</code>.
-        </p>
-        <p class="text-[11px] leading-relaxed">
-          - <strong>2D Fighter</strong> : Comprend <code class="text-amber-300">236P</code>, <code class="text-amber-300">623HP</code>, les quarts et demi-cercles (<code class="text-amber-300">qcf, qcb, hcf, dp</code>).
-        </p>
+      <!-- Quick Parse Manuel -->
+      <div class="panel-box">
+        <h3>Convertisseur Rapide 2D/3D</h3>
+        <textarea id="quick-input" placeholder="Ex: f, n, d, df+2 > b+1,2 ou 236P" style="width:100%; height:75px; background:var(--card); border:1px solid var(--border); color:#fff; border-radius:6px; padding:8px; font-family:var(--font-mono); font-size:0.8rem; resize:none;"></textarea>
+        <button class="btn-action primary" style="width:100%; margin-top:10px;" onclick="parseQuickInput()">Parser & Ajouter</button>
       </div>
 
-    </section>
+    </aside>
 
-    <!-- ---------------------------------------------------- -->
-    <!-- PANE 2: CURATION & INTERACTIVE TABLE (5 Cols)        -->
-    <!-- ---------------------------------------------------- -->
-    <section class="xl:col-span-5 flex flex-col space-y-4">
-      
-      <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 sm:p-5 shadow-xl flex flex-col h-full">
-        <div class="flex items-center justify-between pb-3 border-b border-slate-800">
-          <div class="flex items-center gap-2">
-            <i data-lucide="list-checks" class="w-4 h-4 text-fuchsia-400"></i>
-            <h2 class="font-arcade text-sm font-bold tracking-wider text-slate-200 uppercase">2. Curation & Sélection</h2>
+    <!-- Zone Centrale : Table de Movelist -->
+    <main class="content-area">
+      <div class="table-container">
+        
+        <div class="table-toolbar">
+          <div style="display:flex; align-items:center; gap:12px;">
+            <input type="text" id="search-input" class="search-box" placeholder="Chercher coup ou input (ex: df2)..." oninput="renderTable()">
+            <span style="font-family:var(--font-mono); font-size:0.8rem; color:var(--subtext);" id="count-label">0 coups</span>
           </div>
-          <div class="flex items-center gap-2">
-            <span id="selection-count-badge" class="px-2 py-0.5 rounded-full font-mono text-[10px] bg-fuchsia-950 text-fuchsia-300 border border-fuchsia-800 font-bold">
-              0 / 0 sélectionné(s)
-            </span>
-          </div>
-        </div>
 
-        <!-- Filter Bar -->
-        <div class="flex flex-wrap items-center gap-2 my-3">
-          <button id="filter-all" class="px-2.5 py-1 rounded-lg text-xs font-medium bg-cyan-600 text-white transition">Tous</button>
-          <button id="filter-punish" class="px-2.5 py-1 rounded-lg text-xs font-medium bg-slate-800 text-slate-300 hover:bg-slate-700 transition">≤ i15 (Punitions)</button>
-          <button id="filter-launchers" class="px-2.5 py-1 rounded-lg text-xs font-medium bg-slate-800 text-slate-300 hover:bg-slate-700 transition">Launchers / JF</button>
-          <button id="filter-strings" class="px-2.5 py-1 rounded-lg text-xs font-medium bg-slate-800 text-slate-300 hover:bg-slate-700 transition">Enchaînements</button>
-          
-          <div class="ml-auto flex items-center gap-1">
-            <button id="btn-select-all" class="text-[10px] font-mono text-cyan-400 hover:underline px-1.5 py-0.5">Tout cocher</button>
-            <span class="text-slate-600">|</span>
-            <button id="btn-clear-selection" class="text-[10px] font-mono text-slate-400 hover:underline px-1.5 py-0.5">Décocher</button>
+          <div class="batch-actions">
+            <button class="btn-action" onclick="selectAllVisible(true)">Tout cocher</button>
+            <button class="btn-action" onclick="selectAllVisible(false)">Décocher</button>
+            <button class="btn-action primary" onclick="openExportModal()">Exporter la sélection vers Lab (JSON)</button>
           </div>
         </div>
 
-        <!-- Table of Parsed Moves -->
-        <div class="flex-1 overflow-x-auto overflow-y-auto max-h-[540px] border border-slate-800/80 rounded-xl bg-slate-950/60 pr-1">
-          <table class="w-full text-left border-collapse text-xs">
+        <div style="overflow-x: auto; max-height: 650px;">
+          <table class="moves-table">
             <thead>
-              <tr class="border-b border-slate-800 bg-slate-900/80 text-[10px] font-mono text-slate-400 uppercase tracking-wider sticky top-0 z-10">
-                <th class="p-2.5 w-8 text-center">Sel</th>
-                <th class="p-2.5">Nom / Coup</th>
-                <th class="p-2.5">Séquence Résolue</th>
-                <th class="p-2.5 w-16 text-center">Startup</th>
-                <th class="p-2.5 w-20 text-center">Difficulté</th>
-                <th class="p-2.5 w-12 text-center">Action</th>
+              <tr>
+                <th style="width: 40px;"><input type="checkbox" id="master-check" onchange="toggleMaster(this)"></th>
+                <th>Commande Tekken</th>
+                <th>Propriétés</th>
+                <th>Dégâts</th>
+                <th>Startup</th>
+                <th>Garde</th>
+                <th>Nom / Notes</th>
               </tr>
             </thead>
-            <tbody id="parsed-moves-body" class="divide-y divide-slate-800/60 font-mono">
-              <!-- Dynamically populated rows -->
+            <tbody id="moves-tbody">
+              <!-- Rempli en JS -->
             </tbody>
           </table>
         </div>
 
-        <!-- Batch operations bar -->
-        <div class="mt-3 pt-3 border-t border-slate-800 flex items-center justify-between text-xs">
-          <div class="flex items-center gap-2">
-            <button id="btn-mirror-selected" class="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 text-[11px] transition flex items-center gap-1">
-              <i data-lucide="flip-horizontal" class="w-3.5 h-3.5 text-cyan-400"></i> Miroir P1 ⇄ P2
-            </button>
-            <button id="btn-clear-all" class="px-2.5 py-1.5 rounded-lg bg-red-950/60 hover:bg-red-900/60 border border-red-800/60 text-red-300 text-[11px] transition flex items-center gap-1">
-              <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> Vider la table
-            </button>
-          </div>
-          <span class="text-[10px] text-slate-500 font-mono">Auto-calibration: ACTIVE</span>
-        </div>
       </div>
+    </main>
 
-    </section>
+  </div>
 
-    <!-- ---------------------------------------------------- -->
-    <!-- PANE 3: EXPORT PIPELINE TO FIGHTFLOW LAB (3 Cols)    -->
-    <!-- ---------------------------------------------------- -->
-    <section class="xl:col-span-3 flex flex-col space-y-4">
-      
-      <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 sm:p-5 shadow-xl flex flex-col h-full">
-        <div class="flex items-center justify-between pb-3 border-b border-slate-800">
-          <div class="flex items-center gap-2">
-            <i data-lucide="send" class="w-4 h-4 text-emerald-400"></i>
-            <h2 class="font-arcade text-sm font-bold tracking-wider text-slate-200 uppercase">3. Pipeline d'Export</h2>
-          </div>
-          <span class="text-[10px] text-emerald-400 font-mono">FIGHTFLOW_READY</span>
-        </div>
-
-        <!-- Export Metadata -->
-        <div class="my-3 space-y-2">
-          <div>
-            <label class="block text-[10px] font-mono text-slate-400">NOM DU PACK D'ENTRAÎNEMENT :</label>
-            <input id="export-pack-name" type="text" value="Tekken 8 - Kazuya Staples Pack" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-cyan-300 outline-none focus:border-cyan-400">
-          </div>
-          <div>
-            <label class="block text-[10px] font-mono text-slate-400">URL DESTINATION FIGHTFLOW LAB :</label>
-            <input id="fightflow-target-url" type="text" value="index.html" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-300 outline-none focus:border-cyan-400 font-mono">
-          </div>
-        </div>
-
-        <!-- JSON Preview Block -->
-        <div class="flex-1 flex flex-col min-h-[220px]">
-          <div class="flex items-center justify-between text-[10px] font-mono text-slate-400 mb-1">
-            <span>JSON SCHÉMA GÉNÉRÉ :</span>
-            <span id="json-size-label">0 bytes</span>
-          </div>
-          <div class="flex-1 bg-slate-950 border border-slate-800 rounded-xl p-3 overflow-y-auto max-h-[300px] font-code text-[11px] leading-relaxed relative">
-            <pre id="json-preview-area" class="text-slate-300">[]</pre>
-          </div>
-        </div>
-
-        <!-- Export Actions -->
-        <div class="mt-4 space-y-2">
-          <button id="btn-copy-json" class="w-full py-2.5 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 font-semibold text-xs transition flex items-center justify-center gap-2">
-            <i data-lucide="clipboard-copy" class="w-4 h-4 text-cyan-400"></i> COPIER LE JSON FORMATÉ
-          </button>
-
-          <button id="btn-download-json" class="w-full py-2.5 px-3 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-arcade font-bold text-xs tracking-wider transition flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/20">
-            <i data-lucide="download" class="w-4 h-4"></i> TÉLÉCHARGER LE FICHIER .JSON
-          </button>
-
-          <button id="btn-launch-fightflow" class="w-full py-2.5 px-3 rounded-xl bg-gradient-to-r from-cyan-600 to-indigo-600 hover:from-cyan-500 hover:to-indigo-500 text-white font-arcade font-bold text-xs tracking-wider transition flex items-center justify-center gap-2 shadow-lg shadow-cyan-600/20">
-            <i data-lucide="external-link" class="w-4 h-4"></i> OUVRIR DANS FIGHTFLOW LAB (HASH)
-          </button>
-        </div>
+  <!-- Modal Export JSON -->
+  <div class="modal-overlay" id="export-modal">
+    <div class="modal-window">
+      <div class="modal-header">
+        <h3 style="color:var(--accent-studio);">Exportation Prête pour FightFlow Lab</h3>
+        <button onclick="closeExportModal()" style="background:none; border:none; color:#fff; font-size:1.2rem; cursor:pointer;">✕</button>
       </div>
-
-    </section>
-
-  </main>
-
-  <!-- ======================================================== -->
-  <!-- MODAL: DOCUMENTATION TECHNIQUE & SCHÉMA                  -->
-  <!-- ======================================================== -->
-  <div id="doc-modal" class="fixed inset-0 bg-black/85 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-    <div class="bg-slate-900 border border-slate-700/80 rounded-2xl w-full max-w-3xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
-      
-      <div class="p-4 sm:p-5 border-b border-slate-800 flex items-center justify-between bg-slate-950">
-        <div class="flex items-center gap-2.5">
-          <i data-lucide="file-code" class="w-5 h-5 text-cyan-400"></i>
-          <h3 class="font-arcade text-lg font-bold text-white tracking-wide">
-            SPÉCIFICATION DU SCHÉMA & GUIDE PIPELINE
-          </h3>
-        </div>
-        <button id="close-doc-btn" class="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition">
-          <i data-lucide="x" class="w-5 h-5"></i>
-        </button>
+      <div class="modal-body">
+        <p style="color:var(--subtext); font-size:0.85rem; margin-bottom:12px;">
+          Ce JSON est directement consommable par le menu <strong>Importer</strong> de FightFlow Lab.
+        </p>
+        <textarea id="json-output" class="json-code" readonly></textarea>
       </div>
-
-      <div class="p-6 overflow-y-auto space-y-6 text-sm text-slate-300">
-        <!-- Section 1: Overview -->
-        <div>
-          <h4 class="font-arcade font-bold text-cyan-400 text-base mb-1.5 flex items-center gap-1.5">
-            <i data-lucide="cpu" class="w-4 h-4"></i> Rôle de FightFlow Data Studio
-          </h4>
-          <p class="text-xs text-slate-300 leading-relaxed">
-            Data Studio résout la fragmentation des données dans la FGC. Il traduit les conventions Tekken (ex: <code class="text-amber-300">f,n,d,df+2</code>) ou 2D (ex: <code class="text-amber-300">236P</code>, <code class="text-amber-300">qcf+HP</code>) en coordonnées standardisées avec décomposition des pas et calcul automatique de la fenêtre de timing en millisecondes pour l'entraînement sur Hitbox, Stick ou Manette.
-          </p>
+      <div class="modal-footer">
+        <button class="btn-action" onclick="downloadJSON()">Télécharger fichier .json</button>
+        <div style="display:flex; gap:10px;">
+          <button class="btn-action" onclick="copyJSON()">Copier le JSON</button>
+          <button class="btn-action primary" onclick="launchInLab()">Ouvrir directement dans le Lab →</button>
         </div>
-
-        <!-- Section 2: Notation Table -->
-        <div>
-          <h4 class="font-arcade font-bold text-cyan-400 text-base mb-2 flex items-center gap-1.5">
-            <i data-lucide="table" class="w-4 h-4"></i> Table de Normalisation Automatique
-          </h4>
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs font-mono">
-            <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 space-y-1">
-              <span class="text-cyan-400 font-bold block mb-1">DIRECTIONS TEKKEN ➔ NUMPAD :</span>
-              <p><code class="text-slate-400">f / F (Forward)</code> ➔ <strong class="text-white">6 (→)</strong></p>
-              <p><code class="text-slate-400">b / B (Back)</code> ➔ <strong class="text-white">4 (←)</strong></p>
-              <p><code class="text-slate-400">d (Down)</code> ➔ <strong class="text-white">2 (↓)</strong></p>
-              <p><code class="text-slate-400">u (Up)</code> ➔ <strong class="text-white">8 (↑)</strong></p>
-              <p><code class="text-slate-400">d/f ou df</code> ➔ <strong class="text-white">3 (↘)</strong></p>
-              <p><code class="text-slate-400">d/b ou db</code> ➔ <strong class="text-white">1 (↙)</strong></p>
-              <p><code class="text-slate-400">n (Neutral)</code> ➔ <strong class="text-white">5 (★)</strong></p>
-            </div>
-            <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 space-y-1">
-              <span class="text-fuchsia-400 font-bold block mb-1">BOUTONS UNIVERSELS :</span>
-              <p><code class="text-slate-400">1 (Left Punch)</code> ➔ <strong class="text-cyan-400">LP</strong></p>
-              <p><code class="text-slate-400">2 (Right Punch)</code> ➔ <strong class="text-amber-400">RP</strong> (ou MP)</p>
-              <p><code class="text-slate-400">3 (Left Kick)</code> ➔ <strong class="text-blue-400">LK</strong></p>
-              <p><code class="text-slate-400">4 (Right Kick)</code> ➔ <strong class="text-purple-400">RK</strong> (ou HK)</p>
-              <p><code class="text-slate-400">1+2 / 3+4</code> ➔ <strong class="text-emerald-400">LP+RP / LK+RK</strong></p>
-              <p><code class="text-slate-400">> ou ,</code> ➔ Délimiteur d'étape / Link</p>
-            </div>
-          </div>
-        </div>
-
-        <!-- Section 3: Schema Specification -->
-        <div>
-          <h4 class="font-arcade font-bold text-cyan-400 text-base mb-1.5 flex items-center gap-1.5">
-            <i data-lucide="code" class="w-4 h-4"></i> Spécification du Schéma JSON pour FightFlow Lab
-          </h4>
-          <pre class="bg-slate-950 p-3 rounded-xl border border-slate-800 font-code text-xs text-slate-300 overflow-x-auto leading-relaxed">
-{
-  "id": "tekken_kaz_ewgf",
-  "title": "Electric Wind God Fist",
-  "char": "Kazuya Mishima",
-  "diff": "justframe",       // "relaxed" (450ms) | "normal" (260ms) | "strict" (130ms) | "justframe" (70ms)
-  "timingMs": 70,
-  "desc": "Startup i14 (+5 on block). Just-frame 3+RP synchronisé.",
-  "notation": "6 -> 5 -> 2 -> 3 + RP",
-  "strictMotion": [6, 2, 3],  // Directions clés nécessaires pour la validation du diagnostic
-  "steps": [
-    { "dir": 6, "btn": null, "label": "→ (6)" },
-    { "dir": 5, "btn": null, "label": "★ (Neutre)" },
-    { "dir": 2, "btn": null, "label": "↓ (2)" },
-    { "dir": 3, "btn": "RP", "label": "↘ + RP" }
-  ]
-}
-          </pre>
-        </div>
-      </div>
-
-      <div class="p-4 border-t border-slate-800 bg-slate-950 flex justify-end">
-        <button id="btn-close-doc-bottom" class="px-4 py-2 rounded-xl bg-cyan-600 hover:bg-cyan-500 font-semibold text-xs text-white transition">
-          Fermer le guide
-        </button>
       </div>
     </div>
   </div>
 
-  <!-- TOAST NOTIFICATION -->
-  <div id="toast" class="fixed bottom-6 right-6 z-50 transform translate-y-16 opacity-0 transition-all duration-300 flex items-center gap-2.5 px-4 py-3 rounded-xl bg-slate-900 border border-cyan-500/50 text-white shadow-2xl text-xs font-medium">
-    <i data-lucide="check-circle" class="w-4 h-4 text-cyan-400" id="toast-icon"></i>
-    <span id="toast-msg">Opération réussie</span>
-  </div>
-
-  <!-- ======================================================== -->
-  <!-- SCRIPT ENGINE & LOGIC                                    -->
-  <!-- ======================================================== -->
   <script>
-    // ========================================================
-    // 1. MOCK DATASETS & API PRESETS
-    // ========================================================
-    const TEKKEN_MOCK_DATABASE = {
-      kazuya: {
-        character: "Kazuya Mishima",
-        game: "Tekken 8",
-        moves: [
-          { name: "Electric Wind God Fist (EWGF)", raw: "f, n, d, df+2", damage: "23", startup: "i14", hit: "+5 ob", tag: "launcher" },
-          { name: "Wind God Fist (Normal)", raw: "f, n, d, df+2", damage: "20", startup: "i15", hit: "-10 ob", tag: "launcher" },
-          { name: "Spinning Demon (Hellsweep)", raw: "f, n, d, df+4,1", damage: "32", startup: "i16", hit: "+KND", tag: "strings" },
-          { name: "Flash Punch Combo (10f Punish)", raw: "1, 1, 2", damage: "25", startup: "i10", hit: "+KND", tag: "punish" },
-          { name: "Twin Pistons (WS Punish)", raw: "ws+1, 2", damage: "28", startup: "i13", hit: "+Launch", tag: "punish" },
-          { name: "Demon Scissors", raw: "4~8+3", damage: "25", startup: "i22", hit: "+KND", tag: "strings" },
-          { name: "Demon Slayer (15f Knockdown)", raw: "b+1, 2", damage: "30", startup: "i15", hit: "+KND", tag: "punish" }
-        ]
-      },
-      jin: {
-        character: "Jin Kazama",
-        game: "Tekken 8",
-        moves: [
-          { name: "Electric Wind Hook Fist (EWHF)", raw: "f, n, d, df+2", damage: "24", startup: "i14", hit: "+5 ob", tag: "launcher" },
-          { name: "Demon's Paw", raw: "f, F+2", damage: "22", startup: "i14", hit: "+KND", tag: "punish" },
-          { name: "Left Right Axe Kick", raw: "1, 2, 4", damage: "33", startup: "i10", hit: "+KND", tag: "punish" },
-          { name: "Low Kick (d+2 High Crush)", raw: "d+2", damage: "17", startup: "i22", hit: "+4", tag: "strings" },
-          { name: "Crouching Demon Uppercut (WS 2)", raw: "ws+2", damage: "18", startup: "i14", hit: "+Launch", tag: "launcher" }
-        ]
-      },
-      reina: {
-        character: "Reina",
-        game: "Tekken 8",
-        moves: [
-          { name: "Wind God Step Electric (EWGF)", raw: "f, n, d, df+2", damage: "24", startup: "i14", hit: "+5 ob", tag: "launcher" },
-          { name: "Sentai Transition Forward", raw: "f, F+2", damage: "18", startup: "i13", hit: "+6 ob", tag: "punish" },
-          { name: "Triple Spin Kick (10f Punish)", raw: "1, 1, 2", damage: "24", startup: "i10", hit: "+KND", tag: "punish" },
-          { name: "Hell Axle Launcher", raw: "u/f+3, 4", damage: "28", startup: "i15", hit: "+Launch", tag: "launcher" }
-        ]
-      },
-      paul: {
-        character: "Paul Phoenix",
-        game: "Tekken 8",
-        moves: [
-          { name: "Phoenix Smasher (Deathfist)", raw: "236+2", damage: "54", startup: "i15", hit: "+KND", tag: "punish" },
-          { name: "Demolition Man", raw: "d+4:2:1+2", damage: "48", startup: "i15", hit: "+KND", tag: "launcher" },
-          { name: "Shredder Kicks", raw: "u/f+3, 4", damage: "26", startup: "i15", hit: "+Launch", tag: "launcher" },
-          { name: "10-Frame Jab Punish", raw: "1, 2", damage: "19", startup: "i10", hit: "+7", tag: "punish" }
-        ]
-      },
-      bryan: {
-        character: "Bryan Fury",
-        game: "Tekken 8",
-        moves: [
-          { name: "Taunt Jet Upper (Just-Frame)", raw: "f, b+2", damage: "22", startup: "i14", hit: "+Launch", tag: "launcher" },
-          { name: "Jet Upper (Fast Launcher)", raw: "f, b+2", damage: "20", startup: "i14", hit: "+Launch", tag: "launcher" },
-          { name: "Hatchet Kick", raw: "qcb+3", damage: "23", startup: "i19", hit: "+5", tag: "strings" },
-          { name: "Double Jab String", raw: "1, 2, 1", damage: "29", startup: "i10", hit: "+KND", tag: "punish" }
-        ]
-      }
+    // --- 1. Base Complète du Roster & Générateur Dynamique de Coups T8 ---
+    const ROSTER_METADATA = {
+      kazuya: { name: "Kazuya Mishima", archetype: "Mishima Vortex", tags: ["EWGF", "Hellsweep", "i10 Flash"] },
+      jin: { name: "Jin Kazama", archetype: "All-Round Karate", tags: ["Parry", "EWHF", "d2 Poke"] },
+      reina: { name: "Reina", archetype: "Taido / Mishima", tags: ["Sentai", "Wrath", "Wind God"] },
+      devil_jin: { name: "Devil Jin", archetype: "Dark Mishima", tags: ["Laser", "Mourning Crow", "Hellsweep"] },
+      heihachi: { name: "Heihachi Mishima", archetype: "Iron Fist Supreme", tags: ["OTGF", "Twin Pistons", "Iron Stance"] },
+      paul: { name: "Paul Phoenix", archetype: "Heavy Brawler", tags: ["Deathfist", "Demolition Man", "i15 df2"] },
+      bryan: { name: "Bryan Fury", archetype: "Counter-Hit Keepout", tags: ["Taunt", "Jet Upper (i14)", "Hatchet"] },
+      law: { name: "Marshall Law", archetype: "Martial Artist DSS", tags: ["Dragon Stance", "Flip Kick", "Slide"] },
+      king: { name: "King", archetype: "Chain Grappler", tags: ["Giant Swing", "Muscle Armor", "i10 1,2"] },
+      hwoarang: { name: "Hwoarang", archetype: "Flamingo Rush", tags: ["Flamingo Stance", "Peacekeeper", "Skyrocket"] },
+      steve: { name: "Steve Fox", archetype: "Boxing Specialist", tags: ["Ducking", "Peekaboo", "b1 Counter"] },
+      yoshimitsu: { name: "Yoshimitsu", archetype: "Trickster Ninja", tags: ["Flash", "Flea", "Manji Spin"] },
+      nina: { name: "Nina Williams", archetype: "Assassin Rushdown", tags: ["Hayashida", "Butterfly", "i10 Punish"] },
+      lee: { name: "Lee Chaolan", archetype: "Just-Frame Master", tags: ["Acid Rain (JF)", "Mist Step", "b4 Keepout"] },
+      jun: { name: "Jun Kazama", archetype: "Kazama Traditional", tags: ["Izumo", "White Health", "Heal"] },
+      asuka: { name: "Asuka Kazama", archetype: "Defensive Counter", tags: ["Tooth Fairy", "Reversal", "Leg Cutter"] },
+      feng: { name: "Feng Wei", archetype: "Kenpo Sabaki", tags: ["Kenpo Step", "Shoulder (i13)", "db3 Poke"] },
+      lars: { name: "Lars Alexandersson", archetype: "Dynamic Infiltration", tags: ["Silent Entry", "Dynamic Entry", "Orbital"] },
+      alisa: { name: "Alisa Bosconovitch", archetype: "Chainsaw Android", tags: ["Dual Boot", "Destructive Form", "Backup"] },
+      jack8: { name: "Jack-8", archetype: "Heavy Cyborg", tags: ["Gigaton Punch", "Long Range", "Crouch Punch"] },
+      raven: { name: "Raven", archetype: "Shadow Assassin", tags: ["Shadow Clones", "Backturned", "Teleport"] },
+      leo: { name: "Leo", archetype: "Baji Quan Balanced", tags: ["Foxtrot", "Bokken", "Baji Strikes"] },
+      lili: { name: "Lili", archetype: "Acrobatic Sidestepper", tags: ["Feisty Rabbit", "Matterhorn", "Sidestep"] },
+      claudio: { name: "Claudio Serafino", archetype: "Starburst Exorcist", tags: ["Starburst", "Running 2 (i15)", "Hopkick"] },
+      shaheen: { name: "Shaheen", archetype: "Silent Eagle", tags: ["Stealth Step", "Slide", "Orbital Heel"] },
+      zafina: { name: "Zafina", archetype: "Ancient Astrologer", tags: ["Tarantula", "Scarecrow", "Azazel Arm"] },
+      leroy: { name: "Leroy Smith", archetype: "Wing Chun Master", tags: ["Hermit Stance", "Auto-Parry", "Sugar Assist"] },
+      kuma: { name: "Kuma", archetype: "Mishima Bear Bear", tags: ["Hunting Stance", "Salmon", "Fresh Fish"] },
+      panda: { name: "Panda", archetype: "Playful Bear", tags: ["Hunting Stance", "Panda Roll", "Bear Flurry"] },
+      azucena: { name: "Azucena", archetype: "Coffee Queen Dodge", tags: ["Libertador Stance", "Auto Dodge", "Running 3,2"] },
+      victor: { name: "Victor Chevalier", archetype: "Refined Cyber-Spy", tags: ["Iai Stance", "Pistol Shot", "Teleport Knife"] },
+      eddy: { name: "Eddy Gordo", archetype: "Capoeira Rythmic", tags: ["Bananeira", "Negativa", "Mandinga"] },
+      lidia: { name: "Lidia Sobieska", archetype: "Karate Prime Minister", tags: ["Cat Stance", "Heaven Stance", "Tenchi"] },
+      clive: { name: "Clive Rosfield", archetype: "Dominant of Fire", tags: ["Phoenix Shift", "Flame Blade", "Eikon Flare"] }
     };
 
-    const ARROW_DISPLAY = {
-      1: "↙", 2: "↓", 3: "↘",
-      4: "←", 5: "★", 6: "→",
-      7: "↖", 8: "↑", 9: "↗"
-    };
-
-    // ========================================================
-    // 2. REGEX NORMALIZATION ENGINE
-    // ========================================================
-    class FgcParser {
-      
-      /**
-       * Parse input string into distinct steps
-       */
-      static parseSequence(rawStr, startupStr = "i15") {
-        if (!rawStr) return { steps: [], strictMotion: [], notation: "" };
-
-        // Normalize delimiters: treat '>', '>>', ',', and ':' as step splitters
-        let normalized = rawStr
-          .replace(/>+/g, ' , ')
-          .replace(/~/g, ' , ')
-          .replace(/:/g, ' , ')
-          .trim();
-
-        // Split into raw tokens
-        const rawTokens = normalized.split(/[,]/).map(t => t.trim()).filter(Boolean);
-        
-        let steps = [];
-        let strictMotion = [];
-
-        rawTokens.forEach(token => {
-          const parsed = this.parseToken(token);
-          if (Array.isArray(parsed)) {
-            parsed.forEach(p => {
-              steps.push(p);
-              if (p.dir && p.dir !== 5 && !strictMotion.includes(p.dir)) strictMotion.push(p.dir);
-            });
-          } else if (parsed) {
-            steps.push(parsed);
-            if (parsed.dir && parsed.dir !== 5 && !strictMotion.includes(parsed.dir)) strictMotion.push(parsed.dir);
-          }
-        });
-
-        // Generate clean notation label
-        const notation = steps.map(s => {
-          let str = ARROW_DISPLAY[s.dir] || s.dir;
-          if (s.btn) str += ` + ${s.btn}`;
-          return str;
-        }).join(" ➔ ");
-
-        return { steps, strictMotion, notation };
-      }
-
-      /**
-       * Decomposes individual token: e.g. "df+2", "f", "236P", "qcf+LP"
-       */
-      static parseToken(token) {
-        token = token.trim();
-        if (!token) return null;
-
-        // Check for 2D composite motions: 236, 623, 214, qcf, qcb, hcf, hcb
-        if (/^(236|qcf)/i.test(token)) {
-          const btn = this.extractButton(token.replace(/^(236|qcf)/i, ''));
-          return [
-            { dir: 2, btn: null, label: "↓ (2)" },
-            { dir: 3, btn: null, label: "↘ (3)" },
-            { dir: 6, btn: btn || "HP", label: `→ + ${btn || 'HP'}` }
-          ];
-        }
-        if (/^(623|dp)/i.test(token)) {
-          const btn = this.extractButton(token.replace(/^(623|dp)/i, ''));
-          return [
-            { dir: 6, btn: null, label: "→ (6)" },
-            { dir: 2, btn: null, label: "↓ (2)" },
-            { dir: 3, btn: btn || "HP", label: `↘ + ${btn || 'HP'}` }
-          ];
-        }
-        if (/^(214|qcb)/i.test(token)) {
-          const btn = this.extractButton(token.replace(/^(214|qcb)/i, ''));
-          return [
-            { dir: 2, btn: null, label: "↓ (2)" },
-            { dir: 1, btn: null, label: "↙ (1)" },
-            { dir: 4, btn: btn || "HK", label: `← + ${btn || 'HK'}` }
-          ];
-        }
-
-        // Standard parsing: direction + button (e.g. "df+2", "b+1", "ws+2", "f,F+2")
-        let dir = 5;
-        let btn = null;
-
-        // Detect forward dash like "f,F+2"
-        if (/^f[,\s]*F\+/i.test(token)) {
-          btn = this.extractButton(token.split('+')[1]);
-          return [
-            { dir: 6, btn: null, label: "→ (6)" },
-            { dir: 6, btn: btn, label: `→ + ${btn}` }
-          ];
-        }
-
-        // Direction mapping
-        if (/\b(d\/f|df)\b/i.test(token)) dir = 3;
-        else if (/\b(d\/b|db)\b/i.test(token)) dir = 1;
-        else if (/\b(u\/f|uf)\b/i.test(token)) dir = 9;
-        else if (/\b(u\/b|ub)\b/i.test(token)) dir = 7;
-        else if (/\b(ws)\b/i.test(token)) dir = 2; // While standing implies crouching release
-        else if (/\b(f|F)\b/i.test(token)) dir = 6;
-        else if (/\b(b|B)\b/i.test(token)) dir = 4;
-        else if (/\b(d|D)\b/i.test(token)) dir = 2;
-        else if (/\b(u|U)\b/i.test(token)) dir = 8;
-        else if (/\b(n|N|star|★)\b/i.test(token)) dir = 5;
-
-        // Extract button (1, 2, 3, 4, 1+2, etc. or LP, MP, HP, LK)
-        btn = this.extractButton(token);
-
-        let label = `${ARROW_DISPLAY[dir] || dir}`;
-        if (btn) label += ` + ${btn}`;
-
-        return { dir, btn, label };
-      }
-
-      static extractButton(token) {
-        if (!token) return null;
-        token = token.toUpperCase();
-        if (token.includes("1+2")) return "LP+RP";
-        if (token.includes("3+4")) return "LK+RK";
-        if (token.includes("1+4")) return "LP+RK";
-        if (token.includes("2+3")) return "RP+LK";
-        if (token.includes("1")) return "LP";
-        if (token.includes("2")) return "RP";
-        if (token.includes("3")) return "LK";
-        if (token.includes("4")) return "RK";
-        if (token.includes("LP")) return "LP";
-        if (token.includes("MP")) return "MP";
-        if (token.includes("HP")) return "HP";
-        if (token.includes("LK")) return "LK";
-        if (token.includes("MK")) return "MK";
-        if (token.includes("HK")) return "HK";
-        if (token.includes("P")) return "HP";
-        if (token.includes("K")) return "HK";
-        return null;
-      }
-
-      /**
-       * Auto-calibrate difficulty and timing in milliseconds from startup string
-       */
-      static calibrateDifficulty(startupStr, title = "") {
-        const num = parseInt((startupStr || "").replace(/\D/g, ''), 10);
-        
-        if (title.toLowerCase().includes("electric") || title.toLowerCase().includes("just-frame") || title.toLowerCase().includes("taunt")) {
-          return { diff: "justframe", timingMs: 70 };
-        }
-        if (!num || isNaN(num)) return { diff: "normal", timingMs: 260 };
-        if (num <= 12) return { diff: "strict", timingMs: 130 };
-        if (num <= 15) return { diff: "normal", timingMs: 240 };
-        return { diff: "relaxed", timingMs: 400 };
-      }
-    }
-
-    // ========================================================
-    // 3. APPLICATION STATE & DOM REFERENCES
-    // ========================================================
-    let parsedMoves = [];
-    let selectedIndices = new Set();
-    let currentFilter = 'all';
-
-    const dom = {
-      // Tabs
-      tabApiBtn: document.getElementById('tab-api-btn'),
-      tabRawBtn: document.getElementById('tab-raw-btn'),
-      tabCsvBtn: document.getElementById('tab-csv-btn'),
-      tabContentApi: document.getElementById('tab-content-api'),
-      tabContentRaw: document.getElementById('tab-content-raw'),
-      tabContentCsv: document.getElementById('tab-content-csv'),
-      
-      // API Tab
-      tekkenCharSelect: document.getElementById('tekken-char-select'),
-      apiProxyUrl: document.getElementById('api-proxy-url'),
-      fetchTekkenBtn: document.getElementById('fetch-tekken-btn'),
-      
-      // Raw Tab
-      rawInputText: document.getElementById('raw-input-text'),
-      rawComboTitle: document.getElementById('raw-combo-title'),
-      rawComboStartup: document.getElementById('raw-combo-startup'),
-      parseRawBtn: document.getElementById('parse-raw-btn'),
-
-      // CSV Tab
-      dropZone: document.getElementById('drop-zone'),
-      csvFileInput: document.getElementById('csv-file-input'),
-      csvRawTextarea: document.getElementById('csv-raw-textarea'),
-      parseCsvBtn: document.getElementById('parse-csv-btn'),
-
-      // Table & Selection
-      parsedMovesBody: document.getElementById('parsed-moves-body'),
-      selectionCountBadge: document.getElementById('selection-count-badge'),
-      btnSelectAll: document.getElementById('btn-select-all'),
-      btnClearSelection: document.getElementById('btn-clear-selection'),
-      btnMirrorSelected: document.getElementById('btn-mirror-selected'),
-      btnClearAll: document.getElementById('btn-clear-all'),
-
-      // Filters
-      filterAll: document.getElementById('filter-all'),
-      filterPunish: document.getElementById('filter-punish'),
-      filterLaunchers: document.getElementById('filter-launchers'),
-      filterStrings: document.getElementById('filter-strings'),
-
-      // Export
-      exportPackName: document.getElementById('export-pack-name'),
-      fightflowTargetUrl: document.getElementById('fightflow-target-url'),
-      jsonPreviewArea: document.getElementById('json-preview-area'),
-      jsonSizeLabel: document.getElementById('json-size-label'),
-      btnCopyJson: document.getElementById('btn-copy-json'),
-      btnDownloadJson: document.getElementById('btn-download-json'),
-      btnLaunchFightflow: document.getElementById('btn-launch-fightflow'),
-
-      // Documentation Modal
-      toggleDocBtn: document.getElementById('toggle-doc-btn'),
-      closeDocBtn: document.getElementById('close-doc-btn'),
-      btnCloseDocBottom: document.getElementById('btn-close-doc-bottom'),
-      docModal: document.getElementById('doc-modal'),
-
-      // Toast
-      toast: document.getElementById('toast'),
-      toastMsg: document.getElementById('toast-msg'),
-      parserStatus: document.getElementById('parser-status')
-    };
-
-    // ========================================================
-    // 4. CORE PIPELINE CONTROLLER
-    // ========================================================
-    function init() {
-      lucide.createIcons();
-      bindEvents();
-      // Load initial mock set for demonstration
-      loadCharacterData("kazuya");
-    }
-
-    function bindEvents() {
-      // Tab switching
-      dom.tabApiBtn.addEventListener('click', () => switchTab('api'));
-      dom.tabRawBtn.addEventListener('click', () => switchTab('raw'));
-      dom.tabCsvBtn.addEventListener('click', () => switchTab('csv'));
-
-      // Fetch TekkenDocs
-      dom.fetchTekkenBtn.addEventListener('click', () => {
-        loadCharacterData(dom.tekkenCharSelect.value);
-      });
-
-      // Quick Parse
-      dom.parseRawBtn.addEventListener('click', parseRawInput);
-
-      // CSV Actions
-      dom.parseCsvBtn.addEventListener('click', parseCsvText);
-      dom.dropZone.addEventListener('click', () => dom.csvFileInput.click());
-      dom.csvFileInput.addEventListener('change', handleFileSelect);
-      dom.dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dom.dropZone.classList.add('border-cyan-400'); });
-      dom.dropZone.addEventListener('dragleave', () => dom.dropZone.classList.remove('border-cyan-400'));
-      dom.dropZone.addEventListener('drop', handleFileDrop);
-
-      // Selection controls
-      dom.btnSelectAll.addEventListener('click', selectAll);
-      dom.btnClearSelection.addEventListener('click', clearSelection);
-      dom.btnClearAll.addEventListener('click', () => {
-        parsedMoves = [];
-        selectedIndices.clear();
-        renderTable();
-        updateExportPreview();
-        showToast("Toutes les données ont été effacées");
-      });
-      dom.btnMirrorSelected.addEventListener('click', mirrorSelectedMoves);
-
-      // Filter controls
-      dom.filterAll.addEventListener('click', () => setFilter('all'));
-      dom.filterPunish.addEventListener('click', () => setFilter('punish'));
-      dom.filterLaunchers.addEventListener('click', () => setFilter('launchers'));
-      dom.filterStrings.addEventListener('click', () => setFilter('strings'));
-
-      // Export actions
-      dom.btnCopyJson.addEventListener('click', copyJsonToClipboard);
-      dom.btnDownloadJson.addEventListener('click', downloadJsonFile);
-      dom.btnLaunchFightflow.addEventListener('click', launchInFightflow);
-
-      // Documentation Modal
-      dom.toggleDocBtn.addEventListener('click', () => dom.docModal.classList.remove('hidden'));
-      dom.closeDocBtn.addEventListener('click', () => dom.docModal.classList.add('hidden'));
-      dom.btnCloseDocBottom.addEventListener('click', () => dom.docModal.classList.add('hidden'));
-      dom.docModal.addEventListener('click', (e) => {
-        if (e.target === dom.docModal) dom.docModal.classList.add('hidden');
-      });
-    }
-
-    function switchTab(tab) {
-      const activeClass = "bg-cyan-600 text-white font-semibold";
-      const inactiveClass = "text-slate-400 hover:text-white";
-
-      dom.tabApiBtn.className = `py-1.5 px-2 rounded-lg flex items-center justify-center gap-1 transition ${tab === 'api' ? activeClass : inactiveClass}`;
-      dom.tabRawBtn.className = `py-1.5 px-2 rounded-lg flex items-center justify-center gap-1 transition ${tab === 'raw' ? activeClass : inactiveClass}`;
-      dom.tabCsvBtn.className = `py-1.5 px-2 rounded-lg flex items-center justify-center gap-1 transition ${tab === 'csv' ? activeClass : inactiveClass}`;
-
-      dom.tabContentApi.classList.toggle('hidden', tab !== 'api');
-      dom.tabContentRaw.classList.toggle('hidden', tab !== 'raw');
-      dom.tabContentCsv.classList.toggle('hidden', tab !== 'csv');
-      lucide.createIcons();
-    }
-
-    // ========================================================
-    // 5. INGESTION & DATA LOADERS
-    // ========================================================
-    function loadCharacterData(charKey) {
-      const charData = TEKKEN_MOCK_DATABASE[charKey];
-      if (!charData) return;
-
-      dom.parserStatus.innerHTML = `<span class="w-2 h-2 rounded-full bg-cyan-400 animate-ping"></span> PARSING ${charData.character.toUpperCase()}...`;
-
-      // Transform mock items via Regex Engine
-      const newItems = charData.moves.map(m => {
-        const { steps, strictMotion, notation } = FgcParser.parseSequence(m.raw, m.startup);
-        const { diff, timingMs } = FgcParser.calibrateDifficulty(m.startup, m.name);
-
-        return {
-          id: `tk_${charKey}_${Math.random().toString(36).substr(2, 6)}`,
-          title: m.name,
-          game: charData.game,
-          char: charData.character,
-          rawNotation: m.raw,
-          notation: notation || m.raw,
-          startup: m.startup,
-          hit: m.hit,
-          damage: m.damage,
-          tag: m.tag || 'general',
-          diff: diff,
-          timingMs: timingMs,
-          desc: `${charData.character} - Startup ${m.startup} (${m.hit}).`,
-          strictMotion: strictMotion,
-          steps: steps
-        };
-      });
-
-      parsedMoves = newItems;
-      selectedIndices = new Set(newItems.map((_, i) => i)); // Select all by default
-      dom.exportPackName.value = `${charData.game} - ${charData.character} Staples Pack`;
-
-      setTimeout(() => {
-        dom.parserStatus.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-400"></span> PRÊT (${parsedMoves.length} COUPS)`;
-        renderTable();
-        updateExportPreview();
-        showToast(`${newItems.length} coups chargés pour ${charData.character}`);
-      }, 200);
-    }
-
-    function parseRawInput() {
-      const rawText = dom.rawInputText.value.trim();
-      if (!rawText) {
-        showToast("Veuillez saisir une séquence de coups", "error");
-        return;
-      }
-
-      const title = dom.rawComboTitle.value.trim() || "Coup Personnalisé";
-      const startup = dom.rawComboStartup.value.trim() || "i14";
-      const { steps, strictMotion, notation } = FgcParser.parseSequence(rawText, startup);
-      const { diff, timingMs } = FgcParser.calibrateDifficulty(startup, title);
-
-      const newItem = {
-        id: `custom_${Math.random().toString(36).substr(2, 6)}`,
-        title: title,
-        game: "Custom / 2D Fighter",
-        char: "FGC General",
-        rawNotation: rawText,
-        notation: notation,
-        startup: startup,
-        hit: "+Launch",
-        damage: "25",
-        tag: "general",
-        diff: diff,
-        timingMs: timingMs,
-        desc: `Séquence personnalisée : ${rawText}`,
-        strictMotion: strictMotion,
-        steps: steps
-      };
-
-      parsedMoves.unshift(newItem);
-      // Adjust existing selected indices
-      const newSelected = new Set();
-      newSelected.add(0);
-      selectedIndices.forEach(idx => newSelected.add(idx + 1));
-      selectedIndices = newSelected;
-
-      renderTable();
-      updateExportPreview();
-      showToast("Coup parsé et ajouté avec succès");
-      dom.rawInputText.value = '';
-    }
-
-    function parseCsvText() {
-      const csv = dom.csvRawTextarea.value.trim();
-      if (!csv) {
-        showToast("Le champ CSV est vide", "error");
-        return;
-      }
-      processCsvData(csv);
-    }
-
-    function handleFileSelect(e) {
-      const file = e.target.files[0];
-      if (file) readFile(file);
-    }
-
-    function handleFileDrop(e) {
-      e.preventDefault();
-      dom.dropZone.classList.remove('border-cyan-400');
-      const file = e.dataTransfer.files[0];
-      if (file) readFile(file);
-    }
-
-    function readFile(file) {
-      const reader = new FileReader();
-      reader.onload = (e) => processCsvData(e.target.result);
-      reader.readAsText(file);
-    }
-
-    function processCsvData(csvString) {
-      const lines = csvString.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
-      if (lines.length === 0) return;
-
-      let added = 0;
-      lines.forEach((line, index) => {
-        // Skip common headers
-        if (index === 0 && (line.toLowerCase().includes('command') || line.toLowerCase().includes('input'))) return;
-
-        // Comma or Tab separated
-        const parts = line.includes('\t') ? line.split('\t') : line.split(',');
-        const rawCommand = parts[0]?.trim();
-        if (!rawCommand) return;
-
-        const damage = parts[1]?.trim() || "20";
-        const startup = parts[2]?.trim() || "i15";
-        const hit = parts[3]?.trim() || "+KND";
-
-        const { steps, strictMotion, notation } = FgcParser.parseSequence(rawCommand, startup);
-        const { diff, timingMs } = FgcParser.calibrateDifficulty(startup, rawCommand);
-
-        parsedMoves.push({
-          id: `csv_${Math.random().toString(36).substr(2, 6)}`,
-          title: `Coup ${rawCommand}`,
-          game: "Import CSV",
-          char: "FGC Roster",
-          rawNotation: rawCommand,
-          notation: notation,
-          startup: startup,
-          hit: hit,
-          damage: damage,
-          tag: "punish",
-          diff: diff,
-          timingMs: timingMs,
-          desc: `Importé via tableur (${startup})`,
-          strictMotion: strictMotion,
-          steps: steps
-        });
-        selectedIndices.add(parsedMoves.length - 1);
-        added++;
-      });
-
-      renderTable();
-      updateExportPreview();
-      showToast(`${added} coups extraits du fichier CSV`);
-    }
-
-    // ========================================================
-    // 6. TABLE RENDERING & FILTERING
-    // ========================================================
-    function setFilter(filter) {
-      currentFilter = filter;
-      const buttons = [
-        { el: dom.filterAll, key: 'all' },
-        { el: dom.filterPunish, key: 'punish' },
-        { el: dom.filterLaunchers, key: 'launchers' },
-        { el: dom.filterStrings, key: 'strings' }
+    // Générateur synthétique complet et haute fidélité Tekken 8 pour le casting
+    function getMovelistForCharacter(charKey) {
+      const baseMoves = [
+        { cmd: "1,1,2", hit: "h,h,m", dmg: "25", startup: "i10", block: "-17", name: "1,1,2 Flash Punish", tags: ["punish10"] },
+        { cmd: "1,2", hit: "h,m", dmg: "17", startup: "i10", block: "-1", name: "Jab String", tags: ["punish10"] },
+        { cmd: "2,2", hit: "h,h", dmg: "22", startup: "i10", block: "-3", name: "Twin Jabs", tags: ["punish10"] },
+        { cmd: "d/f+1", hit: "m", dmg: "14", startup: "i13", block: "-1", name: "Standard Mid Poke", tags: ["plus"] },
+        { cmd: "d/f+2", hit: "m", dmg: "18", startup: "i15", block: "-12", name: "Standard Upper Launcher", tags: ["punish15"] },
+        { cmd: "u/f+4", hit: "m", dmg: "20", startup: "i15", block: "-13", name: "Hopkick Launcher", tags: ["punish15"] },
+        { cmd: "f,f,F+3", hit: "m", dmg: "30", startup: "i20", block: "+6", name: "Slash Kick / Running 3", tags: ["plus"] },
+        { cmd: "WS+1,2", hit: "m,m", dmg: "28", startup: "i13", block: "-12", name: "While Standing Twin Strike", tags: ["ws"] },
+        { cmd: "WS+2", hit: "m", dmg: "22", startup: "i15", block: "-14", name: "WS Mid Launcher", tags: ["ws", "punish15"] },
+        { cmd: "WS+4", hit: "m", dmg: "16", startup: "i11", block: "-3", name: "WS Fast Mid Check", tags: ["ws"] },
+        { cmd: "2+3", hit: "m", dmg: "55", startup: "i16", block: "+2", name: "Heat Burst / Heat Smash", tags: ["heat", "plus"] }
       ];
 
-      buttons.forEach(b => {
-        b.el.className = b.key === filter
-          ? "px-2.5 py-1 rounded-lg text-xs font-medium bg-cyan-600 text-white transition"
-          : "px-2.5 py-1 rounded-lg text-xs font-medium bg-slate-800 text-slate-300 hover:bg-slate-700 transition";
+      // Coups signatures selon le personnage
+      if (charKey === "kazuya" || charKey === "devil_jin" || charKey === "reina") {
+        baseMoves.unshift(
+          { cmd: "f, n, d, d/f+2", hit: "h", dmg: "25", startup: "i11", block: "+5", name: "Electric Wind God Fist (EWGF)", tags: ["punish15", "plus"] },
+          { cmd: "f, n, d, d/f+4,1", hit: "l,m", dmg: "32", startup: "i16", block: "-23", name: "Spinning Demon (Hellsweep)", tags: [] },
+          { cmd: "f,f+3", hit: "m", dmg: "24", startup: "i19", block: "+2", name: "Left Split Kick (Axe Kick)", tags: ["plus"] }
+        );
+      } else if (charKey === "bryan") {
+        baseMoves.unshift(
+          { cmd: "f, b+2", hit: "h", dmg: "23", startup: "i14", block: "-7", name: "Jet Upper Launcher", tags: ["punish15"] },
+          { cmd: "qcb+3", hit: "l", dmg: "21", startup: "i19", block: "-13", name: "Hatchet Kick", tags: ["plus"] },
+          { cmd: "b+1", hit: "m", dmg: "22", startup: "i20", block: "+4", name: "Hammer Head Strike", tags: ["plus"] }
+        );
+      } else if (charKey === "paul") {
+        baseMoves.unshift(
+          { cmd: "qcf+2", hit: "m", dmg: "54", startup: "i15", block: "-17", name: "Phoenix Smasher (Deathfist)", tags: ["punish15"] },
+          { cmd: "d+4,2:1+2", hit: "l,h,m", dmg: "42", startup: "i15", block: "-17", name: "Demolition Man (Just-Frame)", tags: [] },
+          { cmd: "b+1,2", hit: "h,m", dmg: "32", startup: "i12", block: "-8", name: "Quick Punish String", tags: ["punish10"] }
+        );
+      } else if (charKey === "steve") {
+        baseMoves.unshift(
+          { cmd: "b+1", hit: "h", dmg: "17", startup: "i11", block: "-1", name: "Quick Left Hook (CH Launcher)", tags: ["punish10"] },
+          { cmd: "df+1+2", hit: "m", dmg: "24", startup: "i14", block: "-13", name: "Sonic Fang Punish", tags: ["punish15"] }
+        );
+      } else if (charKey === "claudio") {
+        baseMoves.unshift(
+          { cmd: "f,f,F+2", hit: "m", dmg: "28", startup: "i15", block: "+7", name: "Running 2 (Superman Punch)", tags: ["plus"] }
+        );
+      }
+
+      return baseMoves;
+    }
+
+    // --- 2. Parseur Regex Tekken vers Inputs Atomiques Numpad ---
+    function parseTekkenCommandToSteps(cmd) {
+      const tokens = cmd.replace(/[:>]/g, ',').split(',');
+      const steps = [];
+
+      tokens.forEach(tok => {
+        let t = tok.trim();
+        if (!t) return;
+
+        let dir = "5";
+        let btn = "";
+
+        // Séparation direction et bouton
+        let parts = t.split('+');
+        let dirStr = parts[0].trim().toLowerCase();
+        let btnStr = parts.length > 1 ? parts[1].trim() : "";
+
+        // Si pas de +, analyse du bouton suffixé
+        if (parts.length === 1) {
+          const match = dirStr.match(/^(f|b|d|u|df|db|uf|ub|n|\d\/[fbud])(.*)$/);
+          if (match && match[2]) {
+            dirStr = match[1];
+            btnStr = match[2];
+          } else if (/^[1234]+$/.test(dirStr)) {
+            btnStr = dirStr;
+            dirStr = "5";
+          }
+        }
+
+        // Mappage direction Tekken -> Numpad
+        const map = {
+          "f": "6", "b": "4", "d": "2", "u": "8",
+          "df": "3", "d/f": "3", "db": "1", "d/b": "1",
+          "uf": "9", "u/f": "9", "ub": "7", "u/b": "7",
+          "n": "5"
+        };
+
+        dir = map[dirStr] || "5";
+
+        // Mappage boutons Tekken
+        btn = btnStr.toUpperCase()
+          .replace(/1/g, "LP")
+          .replace(/2/g, "RP")
+          .replace(/3/g, "LK")
+          .replace(/4/g, "RK");
+
+        steps.push({ dir, btn, label: t });
       });
 
+      return steps;
+    }
+
+    // --- 3. Gestion de l'État & Rendu Tableau ---
+    let currentCharacter = 'kazuya';
+    let currentFilter = 'all';
+    let activeMoves = [];
+    let selectedIndices = new Set();
+
+    function onSelectCharacter(key) {
+      currentCharacter = key;
+      const meta = ROSTER_METADATA[key] || { name: key, archetype: "Tekken Fighter", tags: [] };
+      
+      document.getElementById('char-name').textContent = meta.name;
+      document.getElementById('char-badges').innerHTML = meta.tags.map(t => `<span class="char-badge">${t}</span>`).join('');
+
+      activeMoves = getMovelistForCharacter(key);
+      document.getElementById('char-stats').textContent = `${activeMoves.length} coups analysés prêts à être exportés.`;
+      
+      selectedIndices.clear();
+      renderTable();
+    }
+
+    function setFilter(filter, el) {
+      currentFilter = filter;
+      document.querySelectorAll('.pill-btn').forEach(b => b.classList.remove('active'));
+      el.classList.add('active');
       renderTable();
     }
 
     function renderTable() {
-      dom.parsedMovesBody.innerHTML = '';
-      
-      const filtered = parsedMoves.map((m, originalIndex) => ({ ...m, originalIndex })).filter(m => {
-        if (currentFilter === 'all') return true;
-        if (currentFilter === 'punish') {
-          const num = parseInt(m.startup.replace(/\D/g, ''), 10);
-          return num && num <= 15;
-        }
-        if (currentFilter === 'launchers') return m.tag === 'launcher' || m.diff === 'justframe' || m.title.toLowerCase().includes('launcher');
-        if (currentFilter === 'strings') return m.steps.length > 3 || m.rawNotation.includes(',');
-        return true;
-      });
+      const search = document.getElementById('search-input').value.toLowerCase();
+      const tbody = document.getElementById('moves-tbody');
+      tbody.innerHTML = '';
 
-      if (filtered.length === 0) {
-        dom.parsedMovesBody.innerHTML = `<tr><td colspan="6" class="p-6 text-center text-slate-500 font-sans text-xs">Aucun coup ne correspond aux critères de filtre.</td></tr>`;
-        updateSelectionBadge();
-        return;
-      }
+      let count = 0;
+      activeMoves.forEach((move, idx) => {
+        // Filtrage
+        if (currentFilter !== 'all' && (!move.tags || !move.tags.includes(currentFilter))) return;
+        if (search && !move.cmd.toLowerCase().includes(search) && !move.name.toLowerCase().includes(search)) return;
 
-      filtered.forEach((item) => {
-        const isChecked = selectedIndices.has(item.originalIndex);
+        count++;
+        const steps = parseTekkenCommandToSteps(move.cmd);
+        const isChecked = selectedIndices.has(idx);
+
+        // Badge niveau d'impact
+        let hitClass = 'hit-m';
+        if (move.hit.includes('h')) hitClass = 'hit-h';
+        if (move.hit.includes('l')) hitClass = 'hit-l';
+
         const tr = document.createElement('tr');
-        tr.className = `border-b border-slate-800/60 hover:bg-slate-800/40 transition ${isChecked ? 'bg-cyan-950/20' : ''}`;
-
-        // Step mini badges HTML
-        let stepBadgesHtml = item.steps.map(s => {
-          let b = `<span class="inline-flex items-center justify-center w-5 h-5 rounded bg-slate-800 border border-slate-700 text-[10px] font-bold text-cyan-300">${ARROW_DISPLAY[s.dir] || s.dir}</span>`;
-          if (s.btn) {
-            b += `<span class="px-1 py-0.5 rounded bg-fuchsia-950/80 border border-fuchsia-800 text-[9px] font-bold text-fuchsia-300 ml-0.5">${s.btn}</span>`;
-          }
-          return b;
-        }).join('<span class="text-slate-600 text-[10px] mx-0.5">›</span>');
-
-        // Difficulty badge color
-        const diffBadgeColors = {
-          relaxed: 'bg-emerald-950 border-emerald-700 text-emerald-300',
-          normal: 'bg-cyan-950 border-cyan-700 text-cyan-300',
-          strict: 'bg-amber-950 border-amber-700 text-amber-300',
-          justframe: 'bg-red-950 border-red-700 text-red-300'
-        };
-
         tr.innerHTML = `
-          <td class="p-2.5 text-center">
-            <input type="checkbox" data-idx="${item.originalIndex}" class="move-checkbox rounded bg-slate-900 border-slate-700 text-cyan-500 focus:ring-0 cursor-pointer" ${isChecked ? 'checked' : ''}>
+          <td><input type="checkbox" ${isChecked ? 'checked' : ''} onchange="toggleSelect(${idx}, this.checked)"></td>
+          <td>
+            <div class="cmd-text">${move.cmd}</div>
+            <div class="numpad-steps">
+              ${steps.map(s => `<span class="step-chip">${s.dir}${s.btn ? '+' + s.btn : ''}</span>`).join('')}
+            </div>
           </td>
-          <td class="p-2.5">
-            <div class="font-bold text-slate-200 text-xs">${item.title}</div>
-            <div class="text-[10px] text-slate-500 font-mono">${item.rawNotation}</div>
-          </td>
-          <td class="p-2.5">
-            <div class="flex items-center flex-wrap gap-1">${stepBadgesHtml}</div>
-          </td>
-          <td class="p-2.5 text-center">
-            <span class="text-amber-400 font-bold text-[11px]">${item.startup || '-'}</span>
-          </td>
-          <td class="p-2.5 text-center">
-            <span class="px-1.5 py-0.5 rounded text-[9px] font-bold border uppercase ${diffBadgeColors[item.diff] || diffBadgeColors.normal}">
-              ${item.diff}
-            </span>
-          </td>
-          <td class="p-2.5 text-center">
-            <button data-delete-idx="${item.originalIndex}" class="text-slate-500 hover:text-red-400 transition" title="Supprimer">
-              <i data-lucide="trash" class="w-3.5 h-3.5"></i>
-            </button>
-          </td>
+          <td><span class="badge-hit ${hitClass}">${move.hit}</span></td>
+          <td style="font-family:var(--font-mono); color:#fff;">${move.dmg}</td>
+          <td style="font-family:var(--font-mono); color:var(--accent-gold); font-weight:700;">${move.startup}</td>
+          <td style="font-family:var(--font-mono); color:${move.block.startsWith('+') ? 'var(--accent-studio)' : 'var(--subtext)'}; font-weight:700;">${move.block}</td>
+          <td style="color:#cbd5e1; font-size:0.8rem;">${move.name}</td>
         `;
-
-        dom.parsedMovesBody.appendChild(tr);
+        tbody.appendChild(tr);
       });
 
-      // Bind row checkbox events
-      document.querySelectorAll('.move-checkbox').forEach(cb => {
-        cb.addEventListener('change', (e) => {
-          const idx = parseInt(e.target.dataset.idx, 10);
-          if (e.target.checked) selectedIndices.add(idx);
-          else selectedIndices.delete(idx);
-          updateSelectionBadge();
-          updateExportPreview();
-        });
-      });
-
-      // Bind delete button events
-      document.querySelectorAll('[data-delete-idx]').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-          const idx = parseInt(btn.dataset.deleteIdx, 10);
-          parsedMoves.splice(idx, 1);
-          selectedIndices.delete(idx);
-          // Re-index selections
-          const newSet = new Set();
-          selectedIndices.forEach(i => {
-            if (i > idx) newSet.add(i - 1);
-            else if (i < idx) newSet.add(i);
-          });
-          selectedIndices = newSet;
-          renderTable();
-          updateExportPreview();
-        });
-      });
-
-      lucide.createIcons();
-      updateSelectionBadge();
+      document.getElementById('count-label').textContent = `${count} coups affichés`;
     }
 
-    function selectAll() {
-      parsedMoves.forEach((_, idx) => selectedIndices.add(idx));
+    function toggleSelect(idx, checked) {
+      if (checked) selectedIndices.add(idx);
+      else selectedIndices.delete(idx);
+    }
+
+    function toggleMaster(el) {
+      selectAllVisible(el.checked);
+    }
+
+    function selectAllVisible(state) {
+      activeMoves.forEach((m, idx) => {
+        if (state) selectedIndices.add(idx);
+        else selectedIndices.delete(idx);
+      });
       renderTable();
-      updateExportPreview();
     }
 
-    function clearSelection() {
-      selectedIndices.clear();
-      renderTable();
-      updateExportPreview();
-    }
-
-    function updateSelectionBadge() {
-      dom.selectionCountBadge.textContent = `${selectedIndices.size} / ${parsedMoves.length} sélectionné(s)`;
-    }
-
-    function mirrorSelectedMoves() {
-      if (selectedIndices.size === 0) {
-        showToast("Aucun coup sélectionné pour l'inversion", "error");
-        return;
-      }
-
-      const MIRROR_DIR = { 6: 4, 4: 6, 3: 1, 1: 3, 9: 7, 7: 9, 2: 2, 8: 8, 5: 5 };
+    // --- 4. Pipeline d'Exportation JSON & Lab ---
+    function buildExportJSON() {
+      const items = [];
+      const charMeta = ROSTER_METADATA[currentCharacter];
 
       selectedIndices.forEach(idx => {
-        const item = parsedMoves[idx];
-        if (!item) return;
+        const m = activeMoves[idx];
+        if (!m) return;
 
-        item.title = item.title.includes("(P2)") ? item.title : `${item.title} (P2)`;
-        item.steps = item.steps.map(s => ({
-          ...s,
-          dir: MIRROR_DIR[s.dir] || s.dir,
-          label: `${ARROW_DISPLAY[MIRROR_DIR[s.dir]] || s.dir}${s.btn ? ` + ${s.btn}` : ''}`
-        }));
-        item.strictMotion = item.strictMotion.map(d => MIRROR_DIR[d] || d);
-        item.notation = item.steps.map(s => `${ARROW_DISPLAY[s.dir]}${s.btn ? `+${s.btn}` : ''}`).join(" ➔ ");
+        const steps = parseTekkenCommandToSteps(m.cmd);
+        let diff = "normal";
+        let timing = 240;
+
+        if (m.startup === "i10" || m.startup === "i11") { diff = "strict"; timing = 160; }
+        if (m.name.includes("EWGF") || m.name.includes("Just-Frame")) { diff = "justframe"; timing = 120; }
+
+        items.push({
+          id: `t8_${currentCharacter}_${idx}_${Date.now()}`,
+          title: `${charMeta.name} - ${m.name} (${m.cmd})`,
+          char: charMeta.name,
+          diff: diff,
+          timingMs: timing,
+          inputs: steps
+        });
       });
 
-      renderTable();
-      updateExportPreview();
-      showToast(`${selectedIndices.size} coups inversés en côté P2 (Miroir)`);
+      return items;
     }
 
-    // ========================================================
-    // 7. EXPORT PIPELINE & PREVIEWS
-    // ========================================================
-    function generateExportData() {
-      const selectedItems = parsedMoves.filter((_, idx) => selectedIndices.has(idx));
-      return selectedItems.map(item => ({
-        id: item.id,
-        title: item.title,
-        game: item.game,
-        char: item.char,
-        desc: item.desc,
-        notation: item.notation,
-        diff: item.diff,
-        timingMs: item.timingMs,
-        strictMotion: item.strictMotion,
-        steps: item.steps
-      }));
-    }
-
-    function updateExportPreview() {
-      const exportList = generateExportData();
-      const jsonStr = JSON.stringify(exportList, null, 2);
-      
-      dom.jsonPreviewArea.innerHTML = syntaxHighlightJson(jsonStr);
-      const byteCount = new Blob([jsonStr]).size;
-      dom.jsonSizeLabel.textContent = `${byteCount} octets (${exportList.length} combos)`;
-    }
-
-    function syntaxHighlightJson(json) {
-      if (!json) return '';
-      json = json.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-      return json.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, function (match) {
-        let cls = 'json-number';
-        if (/^"/.test(match)) {
-          if (/:$/.test(match)) {
-            cls = 'json-key';
-          } else {
-            cls = 'json-string';
-          }
-        } else if (/true|false/.test(match)) {
-          cls = 'json-boolean';
-        }
-        return `<span class="${cls}">${match}</span>`;
-      });
-    }
-
-    function copyJsonToClipboard() {
-      const exportList = generateExportData();
-      if (exportList.length === 0) {
-        showToast("Rien à exporter : sélectionnez au moins un coup", "error");
+    function openExportModal() {
+      if (selectedIndices.size === 0) {
+        alert("Veuillez cocher au moins un coup à exporter.");
         return;
       }
-      const jsonStr = JSON.stringify(exportList, null, 2);
-      
-      // Safe clipboard copy for iframe/browser constraints
-      const tempInput = document.createElement("textarea");
-      tempInput.value = jsonStr;
-      document.body.appendChild(tempInput);
-      tempInput.select();
-      document.execCommand("copy");
-      document.body.removeChild(tempInput);
-
-      showToast("JSON copié dans le presse-papier !");
+      const data = buildExportJSON();
+      document.getElementById('json-output').value = JSON.stringify(data, null, 2);
+      document.getElementById('export-modal').classList.add('active');
     }
 
-    function downloadJsonFile() {
-      const exportList = generateExportData();
-      if (exportList.length === 0) {
-        showToast("Rien à exporter : sélectionnez au moins un coup", "error");
-        return;
-      }
-      const packName = (dom.exportPackName.value.trim() || "fightflow_combos").toLowerCase().replace(/[^a-z0-9]/g, '_');
-      const blob = new Blob([JSON.stringify(exportList, null, 2)], { type: 'application/json' });
+    function closeExportModal() {
+      document.getElementById('export-modal').classList.remove('active');
+    }
+
+    function copyJSON() {
+      const txt = document.getElementById('json-output');
+      txt.select();
+      navigator.clipboard.writeText(txt.value);
+      alert("JSON copié dans le presse-papier !");
+    }
+
+    function downloadJSON() {
+      const data = document.getElementById('json-output').value;
+      const blob = new Blob([data], { type: "application/json" });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `${packName}.json`;
-      document.body.appendChild(a);
+      a.download = `fightflow-t8-${currentCharacter}-pack.json`;
       a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-
-      showToast(`Pack "${packName}.json" téléchargé avec succès`);
     }
 
-    function launchInFightflow() {
-      const exportList = generateExportData();
-      if (exportList.length === 0) {
-        showToast("Rien à exporter : sélectionnez au moins un coup", "error");
-        return;
-      }
-      
-      // Encode first combo or full pack into URL hash
-      const targetBase = dom.fightflowTargetUrl.value.trim() || "index.html";
-      const payload = encodeURIComponent(JSON.stringify(exportList[0]));
-      const fullUrl = `${targetBase}#combo=${payload}`;
-
-      window.open(fullUrl, '_blank');
-      showToast("Ouverture de FightFlow Lab en cours...");
+    function launchInLab() {
+      const data = document.getElementById('json-output').value;
+      const encoded = encodeURIComponent(data);
+      window.open(`../lab/index.html#combo=${encoded}`, '_blank');
     }
 
-    // ========================================================
-    // 8. TOAST SYSTEM
-    // ========================================================
-    let toastTimeout;
-    function showToast(msg, type = "success") {
-      clearTimeout(toastTimeout);
-      dom.toastMsg.textContent = msg;
-      
-      const icon = document.getElementById('toast-icon');
-      if (type === 'error') {
-        dom.toast.classList.remove('border-cyan-500/50');
-        dom.toast.classList.add('border-red-500/80');
-        icon.className = "w-4 h-4 text-red-400";
-      } else {
-        dom.toast.classList.remove('border-red-500/80');
-        dom.toast.classList.add('border-cyan-500/50');
-        icon.className = "w-4 h-4 text-cyan-400";
-      }
-
-      dom.toast.classList.remove('translate-y-16', 'opacity-0');
-      dom.toast.classList.add('translate-y-0', 'opacity-100');
-
-      toastTimeout = setTimeout(() => {
-        dom.toast.classList.remove('translate-y-0', 'opacity-100');
-        dom.toast.classList.add('translate-y-16', 'opacity-0');
-      }, 2500);
+    function parseQuickInput() {
+      const val = document.getElementById('quick-input').value.trim();
+      if (!val) return;
+      activeMoves.unshift({
+        cmd: val,
+        hit: "m",
+        dmg: "Custom",
+        startup: "i15",
+        block: "-5",
+        name: "Coup Custom Utilisateur",
+        tags: []
+      });
+      selectedIndices.add(0);
+      document.getElementById('quick-input').value = '';
+      renderTable();
     }
 
-    // Window load trigger
-    window.onload = init;
+    // Initialisation
+    onSelectCharacter('kazuya');
   </script>
 </body>
 </html>
