@@ -984,65 +984,33 @@
     }
 
     function checkUrlHashImport() {
-      if (!window.location.hash) return;
+          // 1. Priorité au transfert local direct depuis le Studio
+          const pending = localStorage.getItem('fightflow_pending_import');
+          if (pending) {
+            try {
+              processImportData(pending, true);
+              localStorage.removeItem('fightflow_pending_import');
+              return;
+            } catch(e) {
+              console.error(e);
+            }
+          }
 
-      const hash = window.location.hash.substring(1);
-      if (!hash.startsWith('combo=')) return;
+          // 2. Repli sur le fragment d'URL
+          if (!window.location.hash) return;
+          const hash = window.location.hash.substring(1);
+          if (!hash.startsWith('combo=')) return;
 
-      try {
-        const rawData = hash.replace('combo=', '');
-        // Supporte le décodage standard et decodeURI de secours
-        const decoded = decodeURIComponent(rawData);
-        const parsed = JSON.parse(decoded);
-
-        let combosToAdd = [];
-        if (Array.isArray(parsed)) {
-          combosToAdd = parsed;
-        } else if (typeof parsed === 'object' && parsed !== null) {
-          // Supporte aussi le format englobant { combos: [...] }
-          if (Array.isArray(parsed.combos)) {
-            combosToAdd = parsed.combos;
-          } else {
-            combosToAdd = [parsed];
+          try {
+            const rawData = hash.replace('combo=', '');
+            const decoded = decodeURIComponent(rawData);
+            processImportData(decoded, true);
+            history.replaceState(null, null, window.location.pathname);
+          } catch (err) {
+            console.error("Erreur d'importation URL :", err);
+            showToast("⚠️ Lien de partage invalide", "alert-triangle");
           }
         }
-
-        if (combosToAdd.length > 0) {
-          // Intégrer les combos dans la bibliothèque active
-          combosToAdd.forEach(combo => {
-            // Évite les doublons d'ID
-            const exists = comboList.some(c => c.id === combo.id);
-            if (!exists) comboList.push(combo);
-          });
-
-          // Sélectionner immédiatement le premier combo importé
-          loadCombo(combosToAdd[0].id);
-          renderComboSelect();
-
-          // Nettoyer l'URL sans recharger la page pour éviter de réimporter en boucle
-          history.replaceState(null, null, window.location.pathname);
-
-          showToast(`✅ ${combosToAdd.length} coup(s) importé(s) avec succès depuis le Studio !`);
-        }
-      } catch (err) {
-        console.error("Erreur d'importation URL :", err);
-        showToast("⚠️ Lien de partage invalide ou trop volumineux.");
-      }
-      // Vérification prioritaire du transfert local depuis le Studio
-      const pending = localStorage.getItem('fightflow_pending_import');
-      if (pending) {
-        try {
-          const imported = JSON.parse(pending);
-          imported.forEach(c => comboList.push(c));
-          loadCombo(imported[0].id);
-          renderComboSelect();
-          localStorage.removeItem('fightflow_pending_import');
-          showToast(`✅ ${imported.length} coup(s) transféré(s) depuis le Studio !`);
-        } catch(e) {
-          console.error(e);
-        }
-      }
-    }
 
     // Appeler au chargement de la page
     window.addEventListener('DOMContentLoaded', checkUrlHashImport);
