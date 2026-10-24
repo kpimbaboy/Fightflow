@@ -1075,37 +1075,83 @@
     }
 
     function processImportData(jsonString, isMerge = true) {
-      try {
-        const parsed = JSON.parse(jsonString);
-        let items = Array.isArray(parsed) ? parsed : [parsed];
+          try {
+            const parsed = JSON.parse(jsonString);
+            let items = [];
 
-        // Validation élémentaire
-        const validItems = items.filter(i => i.title && Array.isArray(i.steps) && Array.isArray(i.strictMotion));
-        if (validItems.length === 0) {
-          showToast("Aucun combo valide détecté dans le JSON", "alert-circle");
-          return;
+            if (Array.isArray(parsed)) {
+              items = parsed;
+            } else if (parsed && Array.isArray(parsed.combos)) {
+              items = parsed.combos;
+            } else if (parsed && typeof parsed === 'object') {
+              items = [parsed];
+            }
+
+            if (items.length === 0) {
+              showToast("Aucun combo détecté dans le JSON", "alert-circle");
+              return;
+            }
+
+            // Normalisation : compatible à la fois avec le format Studio (inputs) et Lab (steps)
+            const validItems = items.map((item, idx) => {
+              let steps = [];
+              let strictMotion = [];
+
+              if (Array.isArray(item.steps)) {
+                steps = item.steps;
+                strictMotion = Array.isArray(item.strictMotion) ? item.strictMotion : steps.map(s => Number(s.dir)).filter(d => d !== 5);
+              } else if (Array.isArray(item.inputs)) {
+                steps = item.inputs.map(inp => {
+                  const d = parseInt(inp.dir) || 5;
+                  const b = inp.btn ? String(inp.btn).trim() : null;
+                  return {
+                    dir: d,
+                    btn: b,
+                    label: inp.label || (b ? `${DIR_SYMBOLS[d] || d}+${b}` : `${DIR_SYMBOLS[d] || d}`)
+                  };
+                });
+                strictMotion = steps.map(s => s.dir).filter(d => d !== 5);
+              }
+
+              if (steps.length === 0) return null;
+
+              return {
+                id: item.id || `custom_import_${Date.now()}_${idx}`,
+                title: item.title || item.name || `Combo #${idx + 1}`,
+                game: item.game || item.char || "Tekken / 2D",
+                desc: item.desc || "Importé depuis FightFlow Data Studio",
+                notation: item.notation || steps.map(s => s.label).join(' ➔ '),
+                strictMotion: strictMotion,
+                steps: steps
+              };
+            }).filter(Boolean);
+
+            if (validItems.length === 0) {
+              showToast("Structure d'inputs invalide", "alert-circle");
+              return;
+            }
+
+            if (isMerge) {
+              validItems.forEach(vi => {
+                const existingIdx = comboLibrary.findIndex(c => c.id === vi.id);
+                if (existingIdx >= 0) comboLibrary[existingIdx] = vi;
+                else comboLibrary.push(vi);
+              });
+              showToast(`✅ ${validItems.length} combo(s) fusionné(s) !`, "git-merge");
+            } else {
+              comboLibrary = validItems;
+              showToast(`✅ Bibliothèque remplacée (${validItems.length} combos) !`, "replace");
+            }
+
+            saveLibraryLocally();
+            populatePresetDropdown();
+            loadCombo(validItems[0]);
+            document.getElementById('io-modal').classList.add('hidden');
+          } catch (err) {
+            console.error("Erreur de parsing JSON :", err);
+            showToast("Format JSON invalide. Vérifiez la syntaxe.", "alert-triangle");
+          }
         }
-
-        if (isMerge) {
-          validItems.forEach(vi => {
-            const idx = comboLibrary.findIndex(c => c.id === vi.id);
-            if (idx >= 0) comboLibrary[idx] = vi;
-            else comboLibrary.push(vi);
-          });
-          showToast(`${validItems.length} combos fusionnés avec succès !`, "git-merge");
-        } else {
-          comboLibrary = validItems;
-          showToast(`Bibliothèque écrasée (${validItems.length} combos chargés) !`, "replace");
-        }
-
-        saveLibraryLocally();
-        populatePresetDropdown();
-        loadCombo(comboLibrary[0]);
-        document.getElementById('io-modal').classList.add('hidden');
-      } catch (err) {
-        showToast("Format JSON invalide. Vérifiez la syntaxe.", "alert-triangle");
-      }
-    }
 
     // ==========================================
     // 6. SOCD & CONTRÔLEURS MULTI-VUES
