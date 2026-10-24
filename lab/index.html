@@ -984,30 +984,68 @@
     }
 
     function checkUrlHashImport() {
-      const hash = window.location.hash;
-      if (!hash || !hash.includes('#combo=')) return;
+      if (!window.location.hash) return;
+
+      const hash = window.location.hash.substring(1);
+      if (!hash.startsWith('combo=')) return;
 
       try {
-        const raw = hash.replace('#combo=', '');
-        const decoded = decodeURIComponent(escape(atob(decodeURIComponent(raw))));
+        const rawData = hash.replace('combo=', '');
+        // Supporte le décodage standard et decodeURI de secours
+        const decoded = decodeURIComponent(rawData);
         const parsed = JSON.parse(decoded);
 
-        if (parsed && parsed.data) {
-          const combo = parsed.data;
-          // Vérifie si déjà présent
-          const existingIdx = comboLibrary.findIndex(c => c.id === combo.id);
-          if (existingIdx >= 0) {
-            comboLibrary[existingIdx] = combo;
+        let combosToAdd = [];
+        if (Array.isArray(parsed)) {
+          combosToAdd = parsed;
+        } else if (typeof parsed === 'object' && parsed !== null) {
+          // Supporte aussi le format englobant { combos: [...] }
+          if (Array.isArray(parsed.combos)) {
+            combosToAdd = parsed.combos;
           } else {
-            comboLibrary.unshift(combo);
+            combosToAdd = [parsed];
           }
-          saveLibraryLocally();
-          showToast(`Combo importé depuis le lien : ${combo.title}`, 'check-circle');
         }
-      } catch (e) {
-        showToast("Erreur lors de la lecture du lien de partage", 'alert-triangle');
+
+        if (combosToAdd.length > 0) {
+          // Intégrer les combos dans la bibliothèque active
+          combosToAdd.forEach(combo => {
+            // Évite les doublons d'ID
+            const exists = comboList.some(c => c.id === combo.id);
+            if (!exists) comboList.push(combo);
+          });
+
+          // Sélectionner immédiatement le premier combo importé
+          loadCombo(combosToAdd[0].id);
+          renderComboSelect();
+
+          // Nettoyer l'URL sans recharger la page pour éviter de réimporter en boucle
+          history.replaceState(null, null, window.location.pathname);
+
+          showToast(`✅ ${combosToAdd.length} coup(s) importé(s) avec succès depuis le Studio !`);
+        }
+      } catch (err) {
+        console.error("Erreur d'importation URL :", err);
+        showToast("⚠️ Lien de partage invalide ou trop volumineux.");
+      }
+      // Vérification prioritaire du transfert local depuis le Studio
+      const pending = localStorage.getItem('fightflow_pending_import');
+      if (pending) {
+        try {
+          const imported = JSON.parse(pending);
+          imported.forEach(c => comboList.push(c));
+          loadCombo(imported[0].id);
+          renderComboSelect();
+          localStorage.removeItem('fightflow_pending_import');
+          showToast(`✅ ${imported.length} coup(s) transféré(s) depuis le Studio !`);
+        } catch(e) {
+          console.error(e);
+        }
       }
     }
+
+    // Appeler au chargement de la page
+    window.addEventListener('DOMContentLoaded', checkUrlHashImport);
 
     function downloadJsonFile(content, fileName = 'fightflow_combos.json') {
       const blob = new Blob([content], { type: 'application/json' });

@@ -870,9 +870,22 @@
     }
 
     function launchInLab() {
-      const data = document.getElementById('json-output').value;
-      const encoded = encodeURIComponent(data);
-      window.open(`../lab/index.html#combo=${encoded}`, '_blank');
+      const data = buildExportJSON();
+      if (!data || data.length === 0) {
+        alert("Aucun coup sélectionné.");
+        return;
+      }
+
+      // Méthode 1 : Partage local via localStorage (ultra-rapide, sans limite de taille)
+      try {
+        localStorage.setItem('fightflow_pending_import', JSON.stringify(data));
+        window.open('../lab/index.html?from=studio', '_blank');
+      } catch (e) {
+        // Méthode 2 : Repli sur le fragment d'URL si le stockage local est restreint
+        const jsonStr = JSON.stringify(data);
+        const encoded = encodeURIComponent(jsonStr);
+        window.open(`../lab/index.html#combo=${encoded}`, '_blank');
+      }
     }
 
     function parseQuickInput() {
